@@ -29,9 +29,9 @@ public class CouponController implements CouponControllerSpec {
 				List.of(
 					new CouponInfo(
 						1L,
-						"10000원 할인 쿠폰",
-						"AMOUNT",
-						BigDecimal.valueOf(10000),
+						"10% 할인 쿠폰",
+						"RATE",
+						BigDecimal.valueOf(10),
 						LocalDate.of(2023, 10, 1),
 						LocalDate.of(2023, 10, 31)
 					),
