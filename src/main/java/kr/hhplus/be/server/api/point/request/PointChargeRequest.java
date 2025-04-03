@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record PointChargeRequest(
 	@Schema(
 		description = "사용자 ID, 1 이상의 정수",
-		example = "1"
+		example = "123"
 	)
 	Long userId,
 
