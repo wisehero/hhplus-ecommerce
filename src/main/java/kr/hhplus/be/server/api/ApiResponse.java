@@ -19,7 +19,7 @@ public record ApiResponse<T>(
 		return new ApiResponse<>(HttpStatus.CREATED.value(), "리소스가 성공적으로 생성되었습니다.", data);
 	}
 
-	public static <T> ResponseEntity<ApiResponse<T>> toResponseEntity(ApiResponse<T> response, HttpStatus status) {
-		return new ResponseEntity<>(response, status);
+	public static <T> ResponseEntity<ApiResponse<T>> toResponseEntity(ApiResponse<T> response) {
+		return new ResponseEntity<>(response, HttpStatus.valueOf(response.code()));
 	}
 }
