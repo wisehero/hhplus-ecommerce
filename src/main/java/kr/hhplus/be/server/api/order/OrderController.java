@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.api.order;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,12 +15,9 @@ import kr.hhplus.be.server.api.order.response.OrderCreateResponse;
 public class OrderController implements OrderControllerSpec {
 
 	@PostMapping
-	public ApiResponse<OrderCreateResponse> createOrder(@RequestBody OrderCreateRequest request) {
-		return ApiResponse.ok(
-			new OrderCreateResponse(
-				1L
-			)
-		);
+	public ResponseEntity<ApiResponse<OrderCreateResponse>> createOrder(@RequestBody OrderCreateRequest request) {
+		ApiResponse<OrderCreateResponse> response = ApiResponse.created(new OrderCreateResponse(1L));
+		return ApiResponse.toResponseEntity(response);
 	}
 
 }

@@ -29,7 +29,8 @@ public class PointController implements PointControllerSpec {
 	public ResponseEntity<ApiResponse<PointOfUserReadResponse>> chargeUserPoints(
 		@RequestBody PointChargeRequest request) {
 
-		ApiResponse<PointOfUserReadResponse> response = ApiResponse.created(new PointOfUserReadResponse(1L, 10000L));
+		ApiResponse<PointOfUserReadResponse> response =
+			ApiResponse.created(new PointOfUserReadResponse(1L, 10000L + request.chargeAmount()));
 		return ApiResponse.toResponseEntity(response);
 	}
 
