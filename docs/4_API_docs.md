@@ -263,7 +263,7 @@
 |        `code`         | Number | HTTP 상태 코드 |
 |       `message`       | String | 요청 처리 메시지  |
 |        `data`         | Object |   응답 데이터   |
-|    `data.products`    | Array  |   상품 목록    |
+|  `data.bestSellers`   | Array  |   상품 목록    |
 |  `product.productId`  | Number |   상품 ID    |
 | `product.productName` | String |   상품 이름    |
 |    `product.price`    | Number |   상품 가격    |
@@ -274,22 +274,24 @@
 {
   "code": 200,
   "message": "요청이 정상적으로 처리되었습니다.",
-  "data": [
-    {
-      "productId": 1,
-      "productName": "ice americano",
-      "price": 1000,
-      "sales": 100,
-      "stock": 100
-    },
-    {
-      "productId": 2,
-      "productName": "iPhone 12",
-      "price": 1200000,
-      "sales": 90,
-      "stock": 100
-    }
-  ]
+  "data": {
+    "bestSellers": [
+      {
+        "productId": 1,
+        "productName": "ice americano",
+        "price": 1000,
+        "sales": 100,
+        "stock": 100
+      },
+      {
+        "productId": 2,
+        "productName": "iPhone 12",
+        "price": 1200000,
+        "sales": 90,
+        "stock": 100
+      }
+    ]
+  }
 }
 ```
 
