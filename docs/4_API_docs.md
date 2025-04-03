@@ -354,7 +354,7 @@
 {
   "code": 201,
   "status": "Created",
-  "message": "요청이 정상적으로 처리되었습니다.",
+  "message": "리소스가 성공적으로 생성되었습니다.",
   "data": {
     "orderId": 1
   }
@@ -511,7 +511,7 @@
 
 <details markdown="1">
 <summary>204 No Content : 쿠폰이 성공적으로 발급된 경우</summary>
-
+```
 </details>
 
 <details markdown="1">
