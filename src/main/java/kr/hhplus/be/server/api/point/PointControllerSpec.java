@@ -93,12 +93,12 @@ public interface PointControllerSpec {
 							"""
 					),
 					@ExampleObject(
-						name = "포인트 충전 실패 : 주문 상태가 EXPIRED(결제 유효 기간 만료)이기 때문에 결제가 실패한 경우",
+						name = "포인트 충전 실패 : 누적 충전 금액을 초과해서 충전이 실패한 경우",
 						value = """
 							{
 								"code": 409,
 								"message": "비즈니스 정책을 위반한 요청입니다.",
-								"detail": "주문 상태가 EXPIRED(결제 불가 건)입니다."
+								"detail": 누적 충전 금액은 5,000,000원을 초과할 수 없습니다. 현재 누적 충전 금액 : 5,000,000원"
 							}
 							"""
 					)
@@ -139,12 +139,12 @@ public interface PointControllerSpec {
 							"""
 					),
 					@ExampleObject(
-						name = "포인트 사용 실패 : 주문 상태가 EXPIRED(결제 유효 기간 만료)이�� 때문에 결제가 실패한 경우",
+						name = "포인트 사용 실패 : 주문 상태가 EXPIRED이기 때문에 결제가 실패한 경우",
 						value = """
 							{
 								"code": 409,
 								"message": "비즈니스 정책을 위반한 요청입니다.",
-								"detail": "주문 상태가 EXPIRED(결제 불가 건)입니다."
+								"detail": "주문 상태가 EXPIRED 입니다."
 							}
 							"""
 					)
