@@ -40,7 +40,7 @@
 
 ### 쿠폰 조회 시퀀스 다이어그램
 
-![sequence_diagram_read_user_point.png](images/sequence_diagram_read_user_point.png)
+![sequence_diagram_read_user_point.png](images/sequence_diagram_read_user_coupon.png)
 
 ## 주문 완료 -> 결제 실패 시퀀스 다이어그램
 
