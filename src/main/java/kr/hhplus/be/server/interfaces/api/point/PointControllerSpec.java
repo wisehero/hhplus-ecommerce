@@ -44,7 +44,7 @@ public interface PointControllerSpec {
 							""")
 				})),
 	})
-	ApiResponse<PointOfUserReadResponse> getPointsOfUser(
+	ApiResponse<PointOfUserReadResponse> getPointOfUser(
 		@Parameter(
 			description = "조회할 사용자 ID (1 이상의 정수)",
 			schema = @Schema(type = "integer", minimum = "1", example = "123")
@@ -106,7 +106,7 @@ public interface PointControllerSpec {
 			)
 		)
 	})
-	ResponseEntity<ApiResponse<PointOfUserReadResponse>> chargeUserPoints(
+	ResponseEntity<ApiResponse<PointOfUserReadResponse>> chargeUserPoint(
 		@Parameter(
 			description = "사용자 포인트 충전 요청 DTO",
 			schema = @Schema(implementation = PointChargeRequest.class))
@@ -152,7 +152,7 @@ public interface PointControllerSpec {
 			)
 		)
 	})
-	ResponseEntity<Void> useUserPoints(
+	ResponseEntity<Void> useUserPoint(
 		@Parameter(
 			description = "사용자 포인트 사용 요청 DTO",
 			schema = @Schema(implementation = PointUseRequest.class))

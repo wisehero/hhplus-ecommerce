@@ -31,7 +31,7 @@ spring:
     password: application
 
 springdoc:
-  packages-to-scan: kr.hhplus.be.server.api
+  packages-to-scan: kr.hhplus.be.server.interfaces.api
   default-consumes-media-type: application/json;charset=UTF-8
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
