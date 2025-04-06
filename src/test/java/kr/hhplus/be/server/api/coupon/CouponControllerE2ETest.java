@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.api.coupon;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -12,7 +11,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kr.hhplus.be.server.api.coupon.request.CouponIssueRequest;
+import kr.hhplus.be.server.interfaces.api.coupon.CouponController;
+import kr.hhplus.be.server.interfaces.api.coupon.request.CouponIssueRequest;
 
 @WebMvcTest(CouponController.class)
 class CouponControllerE2ETest {

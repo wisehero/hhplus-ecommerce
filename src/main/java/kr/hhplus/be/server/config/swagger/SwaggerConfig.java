@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.config.swagger;
 
-import org.aspectj.apache.bcel.classfile.Module;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
