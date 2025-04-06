@@ -9,7 +9,7 @@ public record OrderCreateRequest(
 	@Schema(description = "주문 생성을 요청하는 사용자 ID", example = "1")
 	Long userId,
 	@Schema(description = "사용할 쿠폰 ID (nullable)", example = "1")
-	Long userCoupongId,
+	Long userCouponId,
 	@Schema(description = "주문할 상품 목록")
 	List<OrderProduct> orderProducts
 ) {
