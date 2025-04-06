@@ -13,8 +13,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kr.hhplus.be.server.api.order.request.OrderCreateRequest;
-import kr.hhplus.be.server.api.order.request.OrderProduct;
+import kr.hhplus.be.server.interfaces.api.order.OrderController;
+import kr.hhplus.be.server.interfaces.api.order.request.OrderCreateRequest;
+import kr.hhplus.be.server.interfaces.api.order.request.OrderProduct;
 
 @WebMvcTest(OrderController.class)
 class OrderControllerE2ETest {

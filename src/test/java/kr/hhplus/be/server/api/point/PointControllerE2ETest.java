@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.api.point;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +11,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kr.hhplus.be.server.api.point.request.PointChargeRequest;
-import kr.hhplus.be.server.api.point.request.PointUseRequest;
+import kr.hhplus.be.server.interfaces.api.point.PointController;
+import kr.hhplus.be.server.interfaces.api.point.request.PointChargeRequest;
+import kr.hhplus.be.server.interfaces.api.point.request.PointUseRequest;
 
 @WebMvcTest(PointController.class)
 class PointControllerE2ETest {
