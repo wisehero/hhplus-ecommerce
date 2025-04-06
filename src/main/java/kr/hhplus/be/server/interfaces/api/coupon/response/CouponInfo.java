@@ -3,8 +3,6 @@ package kr.hhplus.be.server.interfaces.api.coupon.response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import org.apache.commons.lang3.builder.HashCodeExclude;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "쿠폰 정보")

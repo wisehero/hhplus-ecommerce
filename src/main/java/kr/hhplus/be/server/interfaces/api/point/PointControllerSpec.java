@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.interfaces.api.point;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
