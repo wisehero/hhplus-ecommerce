@@ -106,7 +106,7 @@ public interface PointControllerSpec {
 			)
 		)
 	})
-	ResponseEntity<ApiResponse<PointOfUserReadResponse>> chargeUserPoint(
+	ApiResponse<PointOfUserReadResponse> chargeUserPoint(
 		@Parameter(
 			description = "사용자 포인트 충전 요청 DTO",
 			schema = @Schema(implementation = PointChargeRequest.class))
@@ -152,7 +152,7 @@ public interface PointControllerSpec {
 			)
 		)
 	})
-	ResponseEntity<Void> useUserPoint(
+	void useUserPoint(
 		@Parameter(
 			description = "사용자 포인트 사용 요청 DTO",
 			schema = @Schema(implementation = PointUseRequest.class))
