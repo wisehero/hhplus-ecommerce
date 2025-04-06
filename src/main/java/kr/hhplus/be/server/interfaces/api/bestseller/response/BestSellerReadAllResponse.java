@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.interfaces.api.product.response;
+package kr.hhplus.be.server.interfaces.api.bestseller.response;
 
 import java.util.List;
 
