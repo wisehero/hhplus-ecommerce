@@ -3,6 +3,7 @@ package kr.hhplus.be.server.interfaces.api.point.request;
 import java.math.BigDecimal;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import kr.hhplus.be.server.domain.point.dto.PointChargeCommand;
 
 @Schema(description = "사용자 포인트 충전 요청 DTO")
 public record PointChargeRequest(
@@ -18,4 +19,8 @@ public record PointChargeRequest(
 	)
 	BigDecimal chargeAmount
 ) {
+
+	public PointChargeCommand toCommand() {
+		return new PointChargeCommand(userId, chargeAmount);
+	}
 }
