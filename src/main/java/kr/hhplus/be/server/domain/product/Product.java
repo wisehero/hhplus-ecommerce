@@ -3,6 +3,8 @@ package kr.hhplus.be.server.domain.product;
 import java.math.BigDecimal;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
@@ -17,6 +19,7 @@ import lombok.NoArgsConstructor;
 public class Product extends BaseTimeEntity {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	private String productName;
