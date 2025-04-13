@@ -72,7 +72,6 @@ class PointTest {
 			.isInstanceOf(PointNotEnoughException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
-			.isEqualTo("포인트 잔액이 부족합니다. 현재 포인트 : 1000, 사용 시도 포인트 : 1001");
-
+			.isEqualTo("잔액이 부족합니다. 현재 포인트 : 1000, 사용 시도 포인트 : 1001");
 	}
 }

@@ -6,4 +6,6 @@ public interface PointRepository {
 
 	Point save(Point point);
 
+	Point saveWithHistory(Point point, PointHistory pointHistory);
+
 }

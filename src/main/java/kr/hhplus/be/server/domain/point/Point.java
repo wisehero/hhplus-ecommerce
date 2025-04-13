@@ -4,8 +4,9 @@ import java.math.BigDecimal;
 
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import kr.hhplus.be.server.domain.point.exception.PointNotEnoughException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class Point {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	private Long userId;
@@ -48,15 +50,8 @@ public class Point {
 	}
 
 	public Point use(BigDecimal useAmount) {
-		if (isInsufficientBalance(useAmount)) {
-			throw new PointNotEnoughException(this.getAmount(), useAmount);
-		}
 		this.balance.subtract(useAmount);
 		return this;
-	}
-
-	private boolean isInsufficientBalance(BigDecimal useAmount) {
-		return this.getAmount().compareTo(useAmount) <= 0;
 	}
 
 	public Long getId() {

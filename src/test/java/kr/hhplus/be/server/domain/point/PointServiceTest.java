@@ -15,17 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import kr.hhplus.be.server.domain.point.dto.PointChargeCommand;
 import kr.hhplus.be.server.domain.point.exception.PointNotEnoughException;
-import kr.hhplus.be.server.domain.point.pointhistory.PointHistory;
-import kr.hhplus.be.server.domain.point.pointhistory.PointHistoryRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class PointServiceTest {
 
 	@Mock
 	private PointRepository pointRepository;
-
-	@Mock
-	private PointHistoryRepository pointHistoryRepository;
 
 	@InjectMocks
 	private PointService pointService;
@@ -91,7 +86,8 @@ public class PointServiceTest {
 		PointChargeCommand command = new PointChargeCommand(userId, chargeAmount);
 
 		when(pointRepository.findByUserId(userId)).thenReturn(userPoint);
-		when(pointRepository.save(any(Point.class))).thenReturn(chargedUserPoint);
+		when(pointRepository.saveWithHistory(any(Point.class), any(PointHistory.class)))
+			.thenReturn(chargedUserPoint);
 
 		// when
 		Point result = pointService.chargeUserPoint(command);
@@ -101,8 +97,7 @@ public class PointServiceTest {
 			() -> assertThat(result.getUserId()).isEqualTo(userId),
 			() -> assertThat(result.getAmount()).isEqualTo(chargeAmount)
 		);
-		verify(pointRepository, times(1)).save(any(Point.class));
-		verify(pointHistoryRepository, times(1)).save(any(PointHistory.class));
+		verify(pointRepository).saveWithHistory(any(Point.class), any(PointHistory.class));
 	}
 
 	@Test
@@ -124,7 +119,7 @@ public class PointServiceTest {
 			.build();
 
 		when(pointRepository.findByUserId(userId)).thenReturn(userPoint);
-		when(pointRepository.save(any(Point.class))).thenReturn(updatedPoint);
+		when(pointRepository.saveWithHistory(any(Point.class), any(PointHistory.class))).thenReturn(updatedPoint);
 
 		// when
 		Point point = pointService.useUserPoint(userId, useAmount);
@@ -134,8 +129,7 @@ public class PointServiceTest {
 			() -> assertThat(point.getUserId()).isEqualTo(userId),
 			() -> assertThat(point.getAmount()).isEqualTo(initialBalance.subtract(useAmount))
 		);
-		verify(pointRepository, times(1)).save(userPoint);
-		verify(pointHistoryRepository, times(1)).save(any(PointHistory.class));
+		verify(pointRepository, times(1)).saveWithHistory(any(Point.class), any(PointHistory.class));
 	}
 
 	@Test
@@ -158,10 +152,9 @@ public class PointServiceTest {
 			.isInstanceOf(PointNotEnoughException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
-			.isEqualTo("포인트 잔액이 부족합니다. 현재 포인트 : 1000, 사용 시도 포인트 : 1001");
+			.isEqualTo("잔액이 부족합니다. 현재 포인트 : 1000, 사용 시도 포인트 : 1001");
 
 		verify(pointRepository, times(1)).findByUserId(userId);
-		verify(pointRepository, never()).save(any(Point.class));
-		verify(pointHistoryRepository, never()).save(any(PointHistory.class));
+		verify(pointRepository, never()).saveWithHistory(any(Point.class), any(PointHistory.class));
 	}
 }
