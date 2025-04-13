@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
 import lombok.AccessLevel;
@@ -24,6 +25,7 @@ public class Product extends BaseTimeEntity {
 
 	private String productName;
 
+	@Lob
 	private String description;
 
 	private BigDecimal price;
