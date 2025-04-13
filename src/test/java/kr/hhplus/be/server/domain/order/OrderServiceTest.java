@@ -47,7 +47,7 @@ class OrderServiceTest {
 		OrderProduct op2 = OrderProduct.create(product2, 1L);
 
 		List<OrderProduct> orderProducts = List.of(op1, op2);
-		totalPrice = op1.getAmount().add(op2.getAmount());
+		totalPrice = op1.getSubTotal().add(op2.getSubTotal());
 
 		Order savedOrder = Order.create(userId, userCouponId, totalPrice);
 		ReflectionTestUtils.setField(savedOrder, "id", 100L);
@@ -179,14 +179,14 @@ class OrderServiceTest {
 			.orderId(orderId)
 			.productId(10L)
 			.quantity(2L)
-			.amount(BigDecimal.valueOf(2000))
+			.subTotal(BigDecimal.valueOf(2000))
 			.build();
 
 		OrderProduct op2 = OrderProduct.builder()
 			.orderId(orderId)
 			.productId(20L)
 			.quantity(1L)
-			.amount(BigDecimal.valueOf(3000))
+			.subTotal(BigDecimal.valueOf(3000))
 			.build();
 
 		List<OrderProduct> orderProducts = List.of(op1, op2);

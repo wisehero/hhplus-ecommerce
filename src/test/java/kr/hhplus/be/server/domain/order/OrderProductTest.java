@@ -28,7 +28,7 @@ class OrderProductTest {
 
 		assertAll(
 			() -> assertThat(orderProduct.getProductId()).isEqualTo(1L),
-			() -> assertThat(orderProduct.getAmount()).isEqualTo(BigDecimal.valueOf(3000)),
+			() -> assertThat(orderProduct.getSubTotal()).isEqualTo(BigDecimal.valueOf(3000)),
 			() -> assertThat(orderProduct.getQuantity()).isEqualTo(3L),
 			() -> assertThat(orderProduct.getOrderId()).isNull()
 		);

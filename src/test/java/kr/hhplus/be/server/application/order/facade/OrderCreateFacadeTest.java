@@ -9,27 +9,23 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
 import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
-import kr.hhplus.be.server.domain.coupon.Coupon;
+import kr.hhplus.be.server.application.order.dto.OrderProductInfo;
 import kr.hhplus.be.server.domain.coupon.CouponService;
-import kr.hhplus.be.server.domain.coupon.UserCoupon;
-import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
+import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderService;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductService;
-import kr.hhplus.be.server.interfaces.api.order.request.OrderLine;
 
 @ExtendWith(MockitoExtension.class)
 class OrderCreateFacadeTest {
@@ -54,8 +50,8 @@ class OrderCreateFacadeTest {
 		BigDecimal price = BigDecimal.valueOf(1000);
 
 		Product product = Product.create("상품명", "설명", price, 100L);
-		OrderLine orderLine = new OrderLine(productId, quantity);
-		OrderCreateCommand command = new OrderCreateCommand(userId, null, List.of(orderLine));
+		OrderProductInfo orderProductInfo = OrderProductInfo.of(productId, quantity);
+		OrderCreateCommand command = new OrderCreateCommand(userId, null, List.of(orderProductInfo));
 
 		when(productService.decreaseStock(productId, quantity)).thenReturn(product);
 
@@ -91,10 +87,10 @@ class OrderCreateFacadeTest {
 		Product product = Product.create("라떼", "달콤한 커피", price, 100L);
 		ReflectionTestUtils.setField(product, "id", productId);
 
-		OrderLine orderLine = new OrderLine(productId, quantity);
-		OrderCreateCommand command = new OrderCreateCommand(userId, userCouponId, List.of(orderLine));
+		OrderProductInfo orderProductInfo = new OrderProductInfo(productId, quantity);
+		OrderCreateCommand command = new OrderCreateCommand(userId, userCouponId, List.of(orderProductInfo));
 
-		UserCoupon userCoupon = UserCoupon.createUserCoupon(userId, 123L, "10% 쿠폰", LocalDate.now(),
+		PublishedCoupon userCoupon = PublishedCoupon.createUserCoupon(userId, 123L, "10% 쿠폰", LocalDate.now(),
 			LocalDate.now().plusDays(3));
 		ReflectionTestUtils.setField(userCoupon, "id", userCouponId);
 
