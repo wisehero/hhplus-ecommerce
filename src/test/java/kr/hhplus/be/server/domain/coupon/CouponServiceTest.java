@@ -40,7 +40,7 @@ class CouponServiceTest {
 			.set(Select.field("id"), publishedCouponId)
 			.create();
 
-		when(couponRepository.findPublishedCouponBy(publishedCouponId)).thenReturn(expected);
+		when(couponRepository.findPublishedCouponById(publishedCouponId)).thenReturn(expected);
 
 		// when
 		PublishedCoupon result = couponService.getPublishedCouponById(publishedCouponId);
@@ -50,7 +50,7 @@ class CouponServiceTest {
 			() -> assertThat(result).isEqualTo(expected),
 			() -> assertThat(result.getId()).isEqualTo(publishedCouponId)
 		);
-		verify(couponRepository).findPublishedCouponBy(publishedCouponId);
+		verify(couponRepository).findPublishedCouponById(publishedCouponId);
 	}
 
 	@Test
@@ -61,7 +61,7 @@ class CouponServiceTest {
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("사용하려는 쿠폰 ID는 null일 수 없습니다.");
 
-		verify(couponRepository, never()).findPublishedCouponBy(any());
+		verify(couponRepository, never()).findPublishedCouponById(any());
 	}
 
 	@Test
@@ -189,7 +189,7 @@ class CouponServiceTest {
 
 		publishedCoupon.discount(BigDecimal.valueOf(10000), LocalDate.now()); // 사용 처리
 
-		when(couponRepository.findPublishedCouponBy(anyLong())).thenReturn(publishedCoupon);
+		when(couponRepository.findPublishedCouponById(anyLong())).thenReturn(publishedCoupon);
 
 		// when
 		couponService.restorePublishedCoupon(0L); // ID는 중요하지 않음
@@ -197,7 +197,7 @@ class CouponServiceTest {
 		// then
 		assertAll(
 			() -> assertThat(publishedCoupon.isUsed()).isFalse(),
-			() -> verify(couponRepository).findPublishedCouponBy(anyLong()),
+			() -> verify(couponRepository).findPublishedCouponById(anyLong()),
 			() -> verify(couponRepository).savePublishedCoupon(publishedCoupon)
 		);
 	}
@@ -210,7 +210,7 @@ class CouponServiceTest {
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("복원하려는 쿠폰 ID는 null일 수 없습니다.");
 
-		verify(couponRepository, never()).findPublishedCouponBy(any());
+		verify(couponRepository, never()).findPublishedCouponById(any());
 		verify(couponRepository, never()).savePublishedCoupon(any());
 	}
 }

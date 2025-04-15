@@ -19,7 +19,7 @@ public class CouponService {
 		if (publishedCouponId == null) {
 			throw new IllegalArgumentException("사용하려는 쿠폰 ID는 null일 수 없습니다.");
 		}
-		return couponRepository.findPublishedCouponBy(publishedCouponId);
+		return couponRepository.findPublishedCouponById(publishedCouponId);
 	}
 
 	@Transactional
@@ -43,7 +43,7 @@ public class CouponService {
 			throw new IllegalArgumentException("복원하려는 쿠폰 ID는 null일 수 없습니다.");
 		}
 
-		PublishedCoupon publishedCoupon = couponRepository.findPublishedCouponBy(publishedCouponId);
+		PublishedCoupon publishedCoupon = couponRepository.findPublishedCouponById(publishedCouponId);
 		publishedCoupon.restore();
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
