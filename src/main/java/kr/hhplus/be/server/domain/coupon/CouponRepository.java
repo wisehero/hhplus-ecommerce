@@ -8,7 +8,9 @@ public interface CouponRepository {
 
 	PublishedCoupon savePublishedCoupon(PublishedCoupon publishedCoupon);
 
-	PublishedCoupon findPublishedCouponBy(Long publishedCouponId);
+	PublishedCoupon findPublishedCouponById(Long publishedCouponId);
+
+	PublishedCoupon findPublishedCouponBy(Long userId, Long couponId);
 
 	boolean existsPublishedCouponBy(Long userId, Long couponId);
 }
