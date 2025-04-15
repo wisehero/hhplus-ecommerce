@@ -8,6 +8,7 @@ import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderService;
 import kr.hhplus.be.server.domain.order.client.DataPlatformClient;
 import kr.hhplus.be.server.domain.point.PointService;
+import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,10 +25,11 @@ public class PointOrderPaymentFacade {
 		Order order = orderService.getOrderById(command.orderId());
 
 		// 결제
-		pointService.useUserPoint(command.userId(), order.getTotalPrice());
+		PointUseCommand pointUseCommand = PointUseCommand.of(command.userId(), order.getTotalPrice());
+		pointService.useUserPoint(pointUseCommand);
 
-		// 주문 상태 PENDING -> COMPLETED
-		orderService.completeOrder(command.orderId());
+		// 주문 상태 PENDING -> PAID
+		orderService.completeOrder(order);
 
 		dataPlatformClient.send(order);
 	}

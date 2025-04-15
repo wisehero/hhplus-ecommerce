@@ -1,5 +1,7 @@
 package kr.hhplus.be.server.domain.point;
 
+import java.util.List;
+
 public interface PointRepository {
 
 	Point findByUserId(Long userId);
@@ -8,4 +10,5 @@ public interface PointRepository {
 
 	Point saveWithHistory(Point point, PointHistory pointHistory);
 
+	List<PointHistory> getPointHistoryByPointId(Long pointId);
 }

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import kr.hhplus.be.server.domain.point.dto.PointChargeCommand;
+import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
 import kr.hhplus.be.server.domain.point.exception.PointNotEnoughException;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,8 +53,7 @@ public class PointServiceTest {
 	void createPointIfNotExists() {
 		// given
 		Long userId = 1L;
-		when(pointRepository.findByUserId(userId)).thenReturn(null);
-		when(pointRepository.save(any(Point.class))).thenReturn(Point.createZeroUserPoint(userId));
+		when(pointRepository.findByUserId(userId)).thenReturn(Point.createZeroUserPoint(userId));
 
 		// when
 		Point result = pointService.getPointOfUser(userId);
@@ -64,7 +64,6 @@ public class PointServiceTest {
 			() -> assertThat(result.getAmount()).isEqualTo(BigDecimal.ZERO)
 		);
 		verify(pointRepository, times(1)).findByUserId(userId);
-		verify(pointRepository, times(1)).save(any(Point.class));
 	}
 
 	@Test
@@ -122,7 +121,7 @@ public class PointServiceTest {
 		when(pointRepository.saveWithHistory(any(Point.class), any(PointHistory.class))).thenReturn(updatedPoint);
 
 		// when
-		Point point = pointService.useUserPoint(userId, useAmount);
+		Point point = pointService.useUserPoint(PointUseCommand.of(userId, useAmount));
 
 		// then
 		assertAll(
@@ -148,7 +147,7 @@ public class PointServiceTest {
 		when(pointRepository.findByUserId(userId)).thenReturn(userPoint);
 
 		// when
-		assertThatThrownBy(() -> pointService.useUserPoint(userId, useAmount))
+		assertThatThrownBy(() -> pointService.useUserPoint(PointUseCommand.of(userId, useAmount)))
 			.isInstanceOf(PointNotEnoughException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")

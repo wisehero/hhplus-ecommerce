@@ -1,5 +1,9 @@
 package kr.hhplus.be.server.interfaces.api.product;
 
+import java.math.BigDecimal;
+
+import org.springframework.web.bind.annotation.RequestParam;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -56,5 +60,7 @@ public interface ProductControllerSpec {
 			)
 		)
 	)
-	ApiResponse<ProductReadAllResponse> getProducts();
+	ApiResponse<ProductReadAllResponse> getProducts(@RequestParam(required = false) String name,
+		@RequestParam(required = false) BigDecimal minPrice,
+		@RequestParam(required = false) BigDecimal maxPrice);
 }

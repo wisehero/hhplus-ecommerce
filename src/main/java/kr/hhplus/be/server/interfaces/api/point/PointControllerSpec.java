@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.hhplus.be.server.interfaces.api.ApiResponse;
 import kr.hhplus.be.server.interfaces.api.point.request.PointChargeRequest;
-import kr.hhplus.be.server.interfaces.api.point.request.PointUseRequest;
+import kr.hhplus.be.server.interfaces.api.point.request.PointUsageRequest;
 import kr.hhplus.be.server.interfaces.api.point.response.PointOfUserReadResponse;
 
 @Tag(
@@ -154,6 +154,6 @@ public interface PointControllerSpec {
 	void useUserPoint(
 		@Parameter(
 			description = "사용자 포인트 사용 요청 DTO",
-			schema = @Schema(implementation = PointUseRequest.class))
-		@RequestBody PointUseRequest request);
+			schema = @Schema(implementation = PointUsageRequest.class))
+		@RequestBody PointUsageRequest request);
 }

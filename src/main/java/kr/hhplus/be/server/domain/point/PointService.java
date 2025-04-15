@@ -1,11 +1,10 @@
 package kr.hhplus.be.server.domain.point;
 
-import java.math.BigDecimal;
-
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import kr.hhplus.be.server.domain.point.dto.PointChargeCommand;
+import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -15,33 +14,37 @@ public class PointService {
 	private final PointRepository pointRepository;
 
 	public Point getPointOfUser(Long userId) {
-		Point userPoint = pointRepository.findByUserId(userId);
-
-		if (userPoint == null) {
-			userPoint = Point.createZeroUserPoint(userId);
-			return pointRepository.save(userPoint);
+		if (userId == null) {
+			throw new IllegalArgumentException("userId는 null일 수 없습니다.");
 		}
 
-		return userPoint;
+		return pointRepository.findByUserId(userId);
 	}
 
 	@Transactional
 	public Point chargeUserPoint(PointChargeCommand command) {
+		if (command.userId() == null) {
+			throw new IllegalArgumentException("userId는 null일 수 없습니다.");
+		}
+
 		Point userPoint = pointRepository.findByUserId(command.userId());
 
 		Point chargedUserPoint = userPoint.charge(command.chargeAmount());
-		PointHistory pointHistory = PointHistory.create(userPoint, command.chargeAmount(), TransactionType.CHARGE);
 
+		PointHistory pointHistory = PointHistory.create(userPoint, command.chargeAmount(), TransactionType.CHARGE);
 		return pointRepository.saveWithHistory(chargedUserPoint, pointHistory);
 	}
 
 	@Transactional
-	public Point useUserPoint(Long userId, BigDecimal useAmount) {
-		Point userPoint = pointRepository.findByUserId(userId);
+	public Point useUserPoint(PointUseCommand command) {
+		if (command.userId() == null) {
+			throw new IllegalArgumentException("userId는 null일 수 없습니다.");
+		}
+		Point userPoint = pointRepository.findByUserId(command.userId());
 
-		Point usedUserPoint = userPoint.use(useAmount);
+		Point usedUserPoint = userPoint.use(command.useAmount());
 
-		PointHistory pointHistory = PointHistory.create(userPoint, useAmount, TransactionType.USE);
+		PointHistory pointHistory = PointHistory.create(userPoint, command.useAmount(), TransactionType.USE);
 		return pointRepository.saveWithHistory(usedUserPoint, pointHistory);
 	}
 }
