@@ -3,19 +3,38 @@ package kr.hhplus.be.server.domain.coupon;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyUsedException;
 import kr.hhplus.be.server.domain.coupon.exception.CouponDoesNotUsedException;
 import kr.hhplus.be.server.domain.coupon.exception.CouponExpiredException;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Entity
+@Table(name = "published_coupon")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class PublishedCoupon {
 
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
 	private Long userId;
+
 	private Long couponId;
+
+	@Embedded
 	private CouponSnapshot couponSnapshot;
+
 	private boolean isUsed;
+
 	private LocalDate issuedAt;
 
 	private PublishedCoupon(Long userId, Long couponId, CouponSnapshot couponSnapshot, boolean isUsed,

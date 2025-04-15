@@ -3,20 +3,44 @@ package kr.hhplus.be.server.domain.coupon;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Entity
+@Table(name = "coupon")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Coupon {
+public class Coupon extends BaseTimeEntity {
 
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
 	private String couponName;
+
 	private BigDecimal discountValue;
+
+	@Enumerated(EnumType.STRING)
 	private DiscountType discountType;
+
+	@Enumerated(EnumType.STRING)
 	private CouponIssuePolicyType issuePolicyType;
+
 	private Long remainingCount;
+
 	private LocalDate validFrom;
+
 	private LocalDate validTo;
 
 	private Coupon(

@@ -2,12 +2,25 @@ package kr.hhplus.be.server.domain.order;
 
 import java.math.BigDecimal;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.product.Product;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Entity
+@Table(name = "order_product")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class OrderProduct {
+public class OrderProduct extends BaseTimeEntity {
 
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	private Long orderId;
 	private Long productId;

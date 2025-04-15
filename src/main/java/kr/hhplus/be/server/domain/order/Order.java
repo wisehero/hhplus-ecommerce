@@ -5,6 +5,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.order.exception.OrderAlreadyCouponAppliedException;
@@ -12,19 +18,31 @@ import kr.hhplus.be.server.domain.order.exception.OrderCannotBeExpiredException;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBePaidException;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.user.User;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Entity
+@Table(name = "orders")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@NoArgsConstructor
 public class Order extends BaseTimeEntity {
 
+	@Id
 	private Long id;
+
 	private Long userId;
+
 	private Long publishedCouponId;
+
+	@Transient
 	private List<OrderProduct> orderProducts;
+
+	@Enumerated(EnumType.STRING)
 	private OrderStatus orderStatus;
+
 	private BigDecimal totalPrice;
+
 	private BigDecimal discountedPrice;
 
 	private Order(Long userId, Long publishedCouponId, List<OrderProduct> orderProducts, OrderStatus orderStatus,
