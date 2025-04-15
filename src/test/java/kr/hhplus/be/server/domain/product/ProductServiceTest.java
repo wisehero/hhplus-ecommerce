@@ -1,11 +1,10 @@
 package kr.hhplus.be.server.domain.product;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.math.BigDecimal;
-import java.util.List;
-
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,80 +24,90 @@ class ProductServiceTest {
 	private ProductService productService;
 
 	@Test
-	@DisplayName("모든 상품을 조회하는 테스트")
-	void getAllProducts() {
-		// given
-		Product product1 = Product.create(
-			"테스트 상품",
-			"테스트 상품 설명",
-			BigDecimal.valueOf(10000),
-			10L
-		);
-		Product product2 = Product.create(
-			"테스트 상품2",
-			"테스트 상품 설명2",
-			BigDecimal.valueOf(20000),
-			20L
-		);
-		List<Product> expectedProducts = List.of(product1, product2);
-		when(productRepository.findAll()).thenReturn(expectedProducts);
-
-		// when
-		List<Product> products = productService.getAllProducts();
-
-		// then
-		assertThat(products).hasSize(expectedProducts.size());
-	}
-
-	@Test
-	@DisplayName("상품 재고를 차감하는 테스트")
-	void descreaseStock() {
+	@DisplayName("유효한 ID로 제품을 조회하면 해당 제품을 반환한다.")
+	void getProductById_validId_returnsProduct() {
 		// given
 		Long productId = 1L;
-		Long quantity = 5L;
-		Product product = Product.create(
-			"테스트 상품",
-			"테스트 상품 설명",
-			BigDecimal.valueOf(10000),
-			10L);
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getId), productId)
+			.create();
 
 		when(productRepository.findById(productId)).thenReturn(product);
 
 		// when
-		Product updatedProduct = productService.decreaseStock(productId, quantity);
+		Product result = productService.getProductById(productId);
 
 		// then
-		assertThat(updatedProduct.getStock()).isEqualTo(5L);
+		assertThat(result).isEqualTo(product);
+		verify(productRepository).findById(productId);
 	}
 
 	@Test
-	@DisplayName("재고보다 더 많은 수량을 차감하려 하면 예외가 발생한다.")
-	void decreaseStockFailInsufficientStock() {
+	@DisplayName("null ID로 제품을 조회하면 IllegalArgumentException이 발생한다.")
+	void getProductById_nullId_throwsException() {
+		// when & then
+		assertThatThrownBy(() -> productService.getProductById(null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("상품 ID가 null입니다.");
+		verify(productRepository, never()).findById(any());
+	}
+
+	@Test
+	@DisplayName("재고 감소 성공 시 재고가 올바르게 감소하고 저장된다.")
+	void decreaseStock_success() {
 		// given
-		Long productId = 1L;
-		Long quantity = 15L;
-		Product product = Product.create(
-			"테스트 상품",
-			"테스트 상품 설명",
-			BigDecimal.valueOf(10000),
-			10L);
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 10L)
+			.create();
 
-		when(productRepository.findById(productId)).thenReturn(product);
+		// when
+		productService.decreaseStock(product, 3L);
 
-		// when, then
-		assertThatThrownBy(() -> productService.decreaseStock(productId, quantity))
-			.isInstanceOf(ProductOutOfStockException.class)
-			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
-			.extracting("detail")
-			.isEqualTo("재고가 부족합니다. 현재 재고 : %s, 사용 시도 수량 : %s".formatted(product.getStock(), quantity));
+		// then
+		assertThat(product.getStock()).isEqualTo(7L);
+		verify(productRepository).save(product);
 	}
 
 	@Test
-	@DisplayName("상품의 재고를 성공적으로 복원(증가)할 수 있다")
+	@DisplayName("수량이 null이면 IllegalArgumentException이 발생한다.")
+	void decreaseStock_nullQuantity() {
+		// given
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 10L)
+			.create();
+
+		// when & then
+		assertThatThrownBy(() -> productService.decreaseStock(product, null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("수량이 null이거나 0 이하입니다.");
+		verify(productRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("재고보다 많은 수량을 감소시키면 ProductOutOfStockException이 발생한다.")
+	void decreaseStock_insufficientStock() {
+		// given
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
+
+		// when & then
+		assertThatThrownBy(() -> productService.decreaseStock(product, 10L))
+			.isInstanceOf(ProductOutOfStockException.class);
+		verify(productRepository, never()).save(any());
+	}
+
+
+	@Test
+	@DisplayName("재고 복구 성공 시 재고가 올바르게 증가하고 저장된다.")
 	void restoreStock_success() {
 		// given
 		Long productId = 1L;
-		Product product = Product.create("테스트 상품", "테스트 설명", BigDecimal.valueOf(1000), 5L);
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getId), productId)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
+
 		when(productRepository.findById(productId)).thenReturn(product);
 
 		// when
@@ -106,5 +115,44 @@ class ProductServiceTest {
 
 		// then
 		assertThat(product.getStock()).isEqualTo(8L);
+		verify(productRepository).save(product);
+	}
+
+	@Test
+	@DisplayName("재고 복구시 복구할 수량이 null이면 IllegalArgumentException이 발생한다.")
+	void restoreStock_nullQuantity() {
+		// given
+		Long productId = 1L;
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getId), productId)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
+
+		when(productRepository.findById(productId)).thenReturn(product);
+
+		// when & then
+		assertThatThrownBy(() -> productService.restoreStock(productId, null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("수량이 null이거나 0 이하입니다.");
+		verify(productRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("재고 복구시 복구할 수량이 0 이하이면 IllegalArgumentException이 발생한다.")
+	void restoreStock_zeroOrNegativeQuantity() {
+		// given
+		Long productId = 1L;
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getId), productId)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
+
+		when(productRepository.findById(productId)).thenReturn(product);
+
+		// when & then
+		assertThatThrownBy(() -> productService.restoreStock(productId, 0L))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("수량이 null이거나 0 이하입니다.");
+		verify(productRepository, never()).save(any());
 	}
 }
