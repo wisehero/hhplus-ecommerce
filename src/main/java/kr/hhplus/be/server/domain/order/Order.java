@@ -8,6 +8,8 @@ import java.util.List;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -29,6 +31,7 @@ import lombok.NoArgsConstructor;
 public class Order extends BaseTimeEntity {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	private Long userId;
@@ -102,6 +105,13 @@ public class Order extends BaseTimeEntity {
 		}
 		this.publishedCouponId = null;
 		this.orderStatus = OrderStatus.EXPIRED;
+	}
+
+	public void assignOrderProduct(List<OrderProduct> orderProducts) {
+		if (orderProducts == null || orderProducts.isEmpty()) {
+			throw new IllegalArgumentException("주문 상품이 null이거나 비어있습니다.");
+		}
+		this.orderProducts = orderProducts;
 	}
 
 	public boolean isCouponApplied() {

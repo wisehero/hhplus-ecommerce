@@ -14,7 +14,11 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 
+	@Transactional
 	public Order order(Order order) {
+		if (order.getOrderProducts().isEmpty()) {
+			throw new IllegalArgumentException("주문 상품이 없습니다.");
+		}
 		return orderRepository.save(order);
 	}
 

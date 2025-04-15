@@ -24,6 +24,7 @@ import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBeExpiredException;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBePaidException;
 import kr.hhplus.be.server.domain.product.Product;
+import kr.hhplus.be.server.domain.user.User;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -56,6 +57,22 @@ class OrderServiceTest {
 			() -> verify(orderRepository, times(1)).save(order),
 			() -> assertThat(result).isEqualTo(savedOrder)
 		);
+	}
+
+	@Test
+	@DisplayName("주문 상품이 비어있으면 예외가 발생한다.")
+	void shouldThrowExceptionWhenOrderHasNoProducts() {
+		// given
+		User user = Instancio.of(User.class)
+			.set(Select.field(User.class, "id"), 1L)
+			.create();
+
+		Order emptyOrder = Order.create(user); // 상품 추가 안함
+
+		// when & then
+		assertThatThrownBy(() -> orderService.order(emptyOrder))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("주문 상품이 없습니다.");
 	}
 
 	@Test
