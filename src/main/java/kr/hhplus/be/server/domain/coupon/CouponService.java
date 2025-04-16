@@ -1,59 +1,50 @@
 package kr.hhplus.be.server.domain.coupon;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
 import lombok.RequiredArgsConstructor;
-
-// TODO : DTO로 파라미터로 묶어보기
 
 @Service
 @RequiredArgsConstructor
 public class CouponService {
 
 	private final CouponRepository couponRepository;
-	private final UserCouponRepository userCouponRepository;
 
-	public UserCoupon getUserCouponById(Long userCouponId) {
-		return userCouponRepository.findById(userCouponId);
+	public PublishedCoupon getPublishedCouponById(Long publishedCouponId) {
+		if (publishedCouponId == null) {
+			throw new IllegalArgumentException("사용하려는 쿠폰 ID는 null일 수 없습니다.");
+		}
+		return couponRepository.findPublishedCouponById(publishedCouponId);
 	}
 
 	@Transactional
-	public void issueCouponToUser(Long couponId, Long userId) {
-		Coupon coupon = couponRepository.findById(couponId);
-
-		coupon.validateIssueAvailable(LocalDate.now());
-
-		if (userCouponRepository.existsByUserIdAndCouponId(userId, couponId)) {
+	public void issueCoupon(CouponIssueCommand command) {
+		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
 			throw new CouponAlreadyIssuedException();
 		}
 
+		Coupon coupon = couponRepository.findById(command.couponId());
 		coupon.issue();
-		UserCoupon userCoupon = UserCoupon.create(userId, coupon);
-		userCouponRepository.save(userCoupon);
+
+		Coupon savedCoupon = couponRepository.save(coupon);
+
+		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
+		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
 	@Transactional
-	public BigDecimal applyCouponDiscount(Long userId, Long userCouponId, BigDecimal originalPrice) {
-		UserCoupon userCoupon = userCouponRepository.findById(userCouponId);
+	public void restorePublishedCoupon(Long publishedCouponId) {
+		if (publishedCouponId == null) {
+			throw new IllegalArgumentException("복원하려는 쿠폰 ID는 null일 수 없습니다.");
+		}
 
-		userCoupon.validateUsable(userId, LocalDate.now());
-
-		Coupon coupon = couponRepository.findById(userCoupon.getCouponId());
-		BigDecimal discountedPrice = coupon.applyDiscount(originalPrice);
-
-		userCoupon.markUsed();
-
-		return discountedPrice;
-	}
-
-	@Transactional
-	public void restoreUserCoupon(Long userCouponId) {
-		UserCoupon userCoupon = userCouponRepository.findById(userCouponId);
-		userCoupon.markUnused();
+		PublishedCoupon publishedCoupon = couponRepository.findPublishedCouponById(publishedCouponId);
+		publishedCoupon.restore();
+		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 }

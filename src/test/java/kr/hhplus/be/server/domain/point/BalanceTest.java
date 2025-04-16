@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import kr.hhplus.be.server.domain.point.exception.PointNotEnoughException;
+
 class BalanceTest {
 
 	@Test
@@ -36,6 +38,21 @@ class BalanceTest {
 
 		// then
 		assertThat(balance.getAmount()).isEqualTo(BigDecimal.valueOf(1000));
+	}
+
+	@Test
+	@DisplayName("잔액을 차감할 때 잔액보다 큰 금액을 차감하면 PointNotEnoughException 예외가 발생한다.")
+	void userCannotUseMoreThanBalance() {
+		// given
+		Balance balance = new Balance(BigDecimal.valueOf(1000));
+		BigDecimal useAmount = BigDecimal.valueOf(2000);
+
+		// expected
+		assertThatThrownBy(() -> balance.subtract(useAmount))
+			.isInstanceOf(PointNotEnoughException.class)
+			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
+			.extracting("detail")
+			.isEqualTo("잔액이 부족합니다. 현재 포인트 : 1000, 사용 시도 포인트 : 2000");
 	}
 
 	@ParameterizedTest

@@ -8,17 +8,23 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBeExpiredException;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBePaidException;
 import kr.hhplus.be.server.domain.product.Product;
+import kr.hhplus.be.server.domain.user.User;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -26,172 +32,191 @@ class OrderServiceTest {
 	@Mock
 	private OrderRepository orderRepository;
 
-	@Mock
-	private OrderProductRepository orderProductRepository;
-
 	@InjectMocks
 	private OrderService orderService;
 
 	@Test
-	@DisplayName("주문을 생성하면 저장된 주문과 주문상품이 반환된다.")
-	void createOrder() {
+	@DisplayName("Order가 저장되면 Repository의 save 메서드가 호출되고 저장된 결과가 반환된다.")
+	void shouldSaveOrderAndReturnSavedInstance() {
 		// given
-		Long userId = 1L;
-		Long userCouponId = null;
-		BigDecimal totalPrice;
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "id"), null)
+			.create();
 
-		Product product1 = Product.create("상품 A", "설명", BigDecimal.valueOf(1000), 100L);
-		Product product2 = Product.create("상품 B", "설명", BigDecimal.valueOf(2000), 50L);
+		Order savedOrder = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "id"), 123L)
+			.create();
 
-		OrderProduct op1 = OrderProduct.create(product1, 2L);
-		OrderProduct op2 = OrderProduct.create(product2, 1L);
-
-		List<OrderProduct> orderProducts = List.of(op1, op2);
-		totalPrice = op1.getAmount().add(op2.getAmount());
-
-		Order savedOrder = Order.create(userId, userCouponId, totalPrice);
-		ReflectionTestUtils.setField(savedOrder, "id", 100L);
-
-		when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+		when(orderRepository.save(order)).thenReturn(savedOrder);
 
 		// when
-		Order result = orderService.order(userId, userCouponId, orderProducts, totalPrice);
+		Order result = orderService.order(order);
 
 		// then
 		assertAll(
-			() -> assertThat(result.getId()).isEqualTo(100L),
-			() -> assertThat(result.getUserId()).isEqualTo(userId),
-			() -> assertThat(result.getUserCouponId()).isNull()
+			() -> verify(orderRepository, times(1)).save(order),
+			() -> assertThat(result).isEqualTo(savedOrder)
 		);
-
-		// OrderProduct에 orderId가 잘 지정되었는지 검증
-		assertThat(orderProducts).allSatisfy(op ->
-			assertThat(op.getOrderId()).isEqualTo(100L)
-		);
-
-		verify(orderRepository).save(any(Order.class));
-		verify(orderProductRepository).saveAll(orderProducts);
 	}
 
 	@Test
-	@DisplayName("주문 대기 상품을 완료 상태(PAID)로 변경한다")
-	void completeOrder() {
+	@DisplayName("주문 상품이 비어있으면 예외가 발생한다.")
+	void shouldThrowExceptionWhenOrderHasNoProducts() {
 		// given
-		Long orderId = 1L;
+		User user = Instancio.of(User.class)
+			.set(Select.field(User.class, "id"), 1L)
+			.create();
 
-		Order order = Order.create(1L, null, BigDecimal.valueOf(10000));
-		ReflectionTestUtils.setField(order, "id", orderId);
+		Order emptyOrder = Order.create(user); // 상품 추가 안함
 
-		when(orderRepository.findById(orderId)).thenReturn(order);
+		// when & then
+		assertThatThrownBy(() -> orderService.order(emptyOrder))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("주문 상품이 없습니다.");
+	}
+
+	@Test
+	@DisplayName("PENDING 상태의 주문을 결제 완료 상태로 변경한다.")
+	void shouldCompleteOrderAndChangeStatusToPaid() {
+		// given
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.PENDING)
+			.create();
+
+		when(orderRepository.save(order)).thenReturn(order);
 
 		// when
-		orderService.completeOrder(orderId);
+		orderService.completeOrder(order);
 
 		// then
-		assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PAID);
-		verify(orderRepository).findById(orderId);
+		assertAll(
+			() -> assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PAID),
+			() -> verify(orderRepository).save(order)
+		);
 	}
 
-	@Test
-	@DisplayName("이미 결제 완료된 주문은 결제 완료 처리할 수 없다")
-	void completeOrderFailsIfAlreadyPaid() {
+	@ParameterizedTest
+	@ValueSource(strings = {"PAID", "EXPIRED"})
+	@DisplayName("PENDING이 아닌 상태의 주문을 완료하려 하면 예외가 발생하고 저장되지 않는다.")
+	void shouldThrowIfOrderStatusNotPending(String status) {
 		// given
-		Order paidOrder = Order.create(1L, null, BigDecimal.valueOf(10000));
-		paidOrder.paid(); // 이미 결제 완료
-		Long orderId = 1L;
-		ReflectionTestUtils.setField(paidOrder, "id", orderId);
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.valueOf(status))
+			.create();
 
-		when(orderRepository.findById(orderId)).thenReturn(paidOrder);
-
-		// expect
-		assertThatThrownBy(() -> orderService.completeOrder(orderId))
+		// when & then
+		assertThatThrownBy(() -> orderService.completeOrder(order))
 			.isInstanceOf(OrderCannotBePaidException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
 			.isEqualTo("PENDING 상태의 주문만 결제할 수 있습니다.");
+
+		verify(orderRepository, never()).save(any());
 	}
 
 	@Test
-	@DisplayName("PENDING 상태의 주문은 만료시 EXPIRED 상태로 변경된다")
-	void expireOrder() {
+	@DisplayName("PENDING 상태의 주문을 expireOrder로 만료하면 상태가 EXPIRED로 변경되고 저장된다.")
+	void shouldExpireOrderAndSaveWhenStatusIsPending() {
 		// given
-		Order order = Order.create(1L, null, BigDecimal.valueOf(10000));
-		ReflectionTestUtils.setField(order, "id", 1L);
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.PENDING)
+			.create();
 
-		when(orderRepository.findById(1L)).thenReturn(order);
+		Order expiredOrder = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.EXPIRED)
+			.create();
+
+		when(orderRepository.save(order)).thenReturn(expiredOrder);
 
 		// when
-		Order result = orderService.expireOrder(1L);
+		Order result = orderService.expireOrder(order);
 
 		// then
 		assertAll(
-			() -> assertThat(result.getOrderStatus()).isEqualTo(OrderStatus.EXPIRED),
-			() -> assertThat(result).isSameAs(order)
+			() -> assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.EXPIRED),
+			() -> assertThat(result).isEqualTo(expiredOrder),
+			() -> verify(orderRepository).save(order)
 		);
-
-		verify(orderRepository).findById(1L);
 	}
 
-	@Test
-	@DisplayName("PAID 상태인 주문은 만료시 OrderCannotBeExpiredException 예외가 발생한다")
-	void expireOrderFailWhenAlreadyPaid() {
+	@ParameterizedTest
+	@ValueSource(strings = {"PAID", "EXPIRED"})
+	@DisplayName("PENDING이 아닌 상태의 주문을 만료하려고 하면 예외가 발생하고 저장되지 않는다.")
+	void shouldThrowExceptionWhenOrderStatusIsNotPending(String status) {
 		// given
-		Order order = Order.create(1L, null, BigDecimal.valueOf(10000));
-		order.paid(); // 상태를 PAID로 만듦
-		ReflectionTestUtils.setField(order, "id", 2L);
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.valueOf(status))
+			.create();
 
-		when(orderRepository.findById(2L)).thenReturn(order);
-
-		// expect
-		assertThatThrownBy(() -> orderService.expireOrder(2L))
+		// when & then
+		assertThatThrownBy(() -> orderService.expireOrder(order))
 			.isInstanceOf(OrderCannotBeExpiredException.class)
-			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
 			.isEqualTo("결제 완료된 주문은 만료할 수 없습니다.");
 
-		verify(orderRepository).findById(2L);
+		verify(orderRepository, never()).save(any());
 	}
 
 	@Test
-	@DisplayName("주문 ID로 주문을 조회한다")
-	void getOrderById_returnsOrder() {
+	@DisplayName("주문 ID로 주문을 조회하면 해당 주문이 반환된다.")
+	void shouldReturnOrderWhenIdIsValid() {
 		// given
-		Long orderId = 1L;
-		Order order = Order.create(1L, null, BigDecimal.valueOf(10000));
+		Order order = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "id"), 123L)
+			.create();
 
-		when(orderRepository.findById(orderId)).thenReturn(order);
+		when(orderRepository.findOrderById(123L)).thenReturn(order);
 
 		// when
-		Order result = orderService.getOrderById(orderId);
+		Order result = orderService.getOrderById(123L);
 
 		// then
-		assertThat(result).isEqualTo(order);
-		verify(orderRepository).findById(orderId);
+		assertAll(
+			() -> assertThat(result).isNotNull(),
+			() -> assertThat(result.getId()).isEqualTo(123L),
+			() -> verify(orderRepository).findOrderById(123L)
+		);
 	}
 
 	@Test
-	@DisplayName("주문 ID로 해당 주문의 주문상품 목록을 조회한다")
-	void getOrderProducts_returnsOrderProducts() {
+	@DisplayName("orderId가 null이면 예외가 발생한다.")
+	void shouldThrowExceptionWhenOrderIdIsNull() {
+		// when & then
+		assertThatThrownBy(() -> orderService.getOrderById(null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("주문 ID는 null일 수 없습니다."); // 메시지는 너의 구현에 맞게
+
+		verify(orderRepository, never()).findOrderById(any());
+	}
+
+	@Test
+	@DisplayName("orderId가 주어지면 해당 주문의 주문 상품 목록을 조회한다.")
+	void shouldReturnOrderProductsWhenOrderIdIsValid() {
 		// given
-		Long orderId = 1L;
+		Long orderId = 123L;
 
-		OrderProduct op1 = OrderProduct.builder()
-			.orderId(orderId)
-			.productId(10L)
-			.quantity(2L)
-			.amount(BigDecimal.valueOf(2000))
-			.build();
+		Product product1 = Instancio.of(Product.class)
+			.set(Select.field(Product.class, "id"), 1L)
+			.set(Select.field(Product.class, "productName"), "상품A")
+			.set(Select.field(Product.class, "price"), BigDecimal.valueOf(10000))
+			.create();
 
-		OrderProduct op2 = OrderProduct.builder()
-			.orderId(orderId)
-			.productId(20L)
-			.quantity(1L)
-			.amount(BigDecimal.valueOf(3000))
-			.build();
+		Product product2 = Instancio.of(Product.class)
+			.set(Select.field(Product.class, "id"), 2L)
+			.set(Select.field(Product.class, "productName"), "상품B")
+			.set(Select.field(Product.class, "price"), BigDecimal.valueOf(20000))
+			.create();
+
+		OrderProduct op1 = OrderProduct.create(product1, 2L);
+		OrderProduct op2 = OrderProduct.create(product2, 1L);
+
+		// assignOrderId 는 도메인 내부에서 따로 처리되므로 테스트에서 직접 세팅
+		op1.assignOrderId(orderId);
+		op2.assignOrderId(orderId);
 
 		List<OrderProduct> orderProducts = List.of(op1, op2);
 
-		when(orderProductRepository.findByOrderId(orderId)).thenReturn(orderProducts);
+		when(orderRepository.findOrderProductsByOrderId(orderId)).thenReturn(orderProducts);
 
 		// when
 		List<OrderProduct> result = orderService.getOrderProducts(orderId);
@@ -199,41 +224,62 @@ class OrderServiceTest {
 		// then
 		assertAll(
 			() -> assertThat(result).hasSize(2),
-			() -> assertThat(result).containsExactly(op1, op2)
+			() -> assertThat(result).extracting(OrderProduct::getOrderId).containsOnly(orderId),
+			() -> assertThat(result).extracting(OrderProduct::getProductName).containsExactly("상품A", "상품B"),
+			() -> verify(orderRepository).findOrderProductsByOrderId(orderId)
 		);
-
-		verify(orderProductRepository).findByOrderId(orderId);
 	}
 
 	@Test
-	@DisplayName("마감 시각 이전에 생성된 PENDING 상태의 주문들을 조회한다")
-	void getOverDueOrders_returnsPendingOrdersBeforeDeadline() {
+	@DisplayName("특정 orderId에 포함된 상품 조회시 orderId가 null이면 IllegalArgumentException이 발생한다.")
+	void shouldFailWhenFetchingOrderProductsWithNullOrderId () {
+		// when & then
+		assertThatThrownBy(() -> orderService.getOrderProducts(null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("주문 ID는 null일 수 없습니다.");
+
+		verify(orderRepository, never()).findOrderProductsByOrderId(any());
+	}
+
+	@Test
+	@DisplayName("마감 기한 이전에 생성된 PENDING 주문만 조회된다.")
+	void shouldReturnOnlyPendingOrdersCreatedBeforeDeadline() {
 		// given
-		LocalDateTime deadline = LocalDateTime.now().minusMinutes(5);
+		LocalDateTime fixedNow = LocalDateTime.of(2025, 4, 15, 12, 0, 0);
+		LocalDateTime deadline = fixedNow.minusMinutes(5); // 11:55
 
-		Order order1 = Order.create(1L, null, BigDecimal.valueOf(10000));
-		Order order2 = Order.create(2L, null, BigDecimal.valueOf(20000));
+		Order overdueOrder = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.PENDING)
+			.set(Select.field(BaseTimeEntity.class, "createdAt"), fixedNow.minusMinutes(10)) // 11:50
+			.create();
 
-		// createdAt은 BaseTimeEntity에 있지만, 테스트에서는 리플렉션으로 세팅 필요
-		ReflectionTestUtils.setField(order1, "createdAt", deadline.minusMinutes(1));
-		ReflectionTestUtils.setField(order2, "createdAt", deadline.minusMinutes(2));
-
-		List<Order> pendingOrders = List.of(order1, order2);
+		Order recentOrder = Instancio.of(Order.class)
+			.set(Select.field(Order.class, "orderStatus"), OrderStatus.PENDING)
+			.set(Select.field(BaseTimeEntity.class, "createdAt"), fixedNow.minusMinutes(2)) // 11:58
+			.create();
 
 		when(orderRepository.findAllPendingBefore(OrderStatus.PENDING, deadline))
-			.thenReturn(pendingOrders);
+			.thenReturn(List.of(overdueOrder));
 
 		// when
 		List<Order> result = orderService.getOverDueOrderIds(deadline);
 
 		// then
 		assertAll(
-			() -> assertThat(result).hasSize(2),
-			() -> assertThat(result).containsExactlyElementsOf(pendingOrders),
-			() -> assertThat(result)
-				.allSatisfy(order -> assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING))
+			() -> assertThat(result).hasSize(1),
+			() -> assertThat(result.get(0).getCreatedAt()).isBefore(deadline),
+			() -> verify(orderRepository).findAllPendingBefore(OrderStatus.PENDING, deadline)
 		);
+	}
 
-		verify(orderRepository).findAllPendingBefore(OrderStatus.PENDING, deadline);
+	@Test
+	@DisplayName("마감 기한이 null이면 IllegalArgumentException이 발생한다.")
+	void fetchOverdueOrdersFailsWhenDeadlineIsNull() {
+		// when & then
+		assertThatThrownBy(() -> orderService.getOverDueOrderIds(null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("마감 기한은 null일 수 없습니다.");
+
+		verify(orderRepository, never()).findAllPendingBefore(any(), any());
 	}
 }

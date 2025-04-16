@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.domain.order;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,41 +13,42 @@ import lombok.RequiredArgsConstructor;
 public class OrderService {
 
 	private final OrderRepository orderRepository;
-	private final OrderProductRepository orderProductRepository;
+
+	@Transactional
+	public Order order(Order order) {
+		if (order.getOrderProducts().isEmpty()) {
+			throw new IllegalArgumentException("주문 상품이 없습니다.");
+		}
+		return orderRepository.save(order);
+	}
+
+	@Transactional
+	public void completeOrder(Order order) {
+		order.paid();
+		orderRepository.save(order);
+	}
+
+	@Transactional
+	public Order expireOrder(Order order) {
+		order.expire();
+		return orderRepository.save(order);
+	}
 
 	public Order getOrderById(Long orderId) {
-		return orderRepository.findById(orderId);
-	}
-
-	@Transactional
-	public Order order(Long userId, Long userCouponId, List<OrderProduct> orderProducts, BigDecimal totalPrice) {
-		Order order = Order.create(userId, userCouponId, totalPrice);
-		Order savedOrder = orderRepository.save(order);
-
-		orderProducts.forEach(op -> op.assignOrderId(savedOrder.getId()));
-		orderProductRepository.saveAll(orderProducts);
-
-		return savedOrder;
-	}
-
-	@Transactional
-	public void completeOrder(Long orderId) {
-		Order order = orderRepository.findById(orderId);
-		order.paid();
-	}
-
-	@Transactional
-	public Order expireOrder(Long orderId) {
-		Order order = orderRepository.findById(orderId);
-		order.expire();
-		return order;
+		if (orderId == null)
+			throw new IllegalArgumentException("주문 ID는 null일 수 없습니다.");
+		return orderRepository.findOrderById(orderId);
 	}
 
 	public List<OrderProduct> getOrderProducts(Long orderId) {
-		return orderProductRepository.findByOrderId(orderId);
+		if (orderId == null)
+			throw new IllegalArgumentException("주문 ID는 null일 수 없습니다.");
+		return orderRepository.findOrderProductsByOrderId(orderId);
 	}
 
 	public List<Order> getOverDueOrderIds(LocalDateTime deadLine) {
+		if (deadLine == null)
+			throw new IllegalArgumentException("마감 기한은 null일 수 없습니다.");
 		return orderRepository.findAllPendingBefore(OrderStatus.PENDING, deadLine);
 	}
 }

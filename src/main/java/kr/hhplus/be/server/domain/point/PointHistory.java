@@ -1,24 +1,28 @@
-package kr.hhplus.be.server.domain.point.pointhistory;
+package kr.hhplus.be.server.domain.point;
+
+import static jakarta.persistence.GenerationType.*;
 
 import java.math.BigDecimal;
 
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import kr.hhplus.be.server.domain.point.Balance;
-import kr.hhplus.be.server.domain.point.Point;
-import kr.hhplus.be.server.domain.point.TransactionType;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "point_history")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class PointHistory {
 
 	@Id
+	@GeneratedValue(strategy = IDENTITY)
 	private Long id;
 
 	private Long pointId;
@@ -27,6 +31,7 @@ public class PointHistory {
 
 	private BigDecimal balance;
 
+	@Enumerated(EnumType.STRING)
 	private TransactionType type;
 
 	@Builder
@@ -38,7 +43,7 @@ public class PointHistory {
 		this.type = type;
 	}
 
-	public static PointHistory createPointHistory(Point point, BigDecimal amount, TransactionType type) {
+	public static PointHistory create(Point point, BigDecimal amount, TransactionType type) {
 		return PointHistory.builder()
 			.pointId(point.getId())
 			.amount(amount)

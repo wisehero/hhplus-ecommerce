@@ -37,13 +37,4 @@ class PercentageDiscountPolicyTest {
 
 		assertThat(result).isEqualTo(BigDecimal.valueOf(7450)); // 2550 할인 → 반올림
 	}
-
-	@ParameterizedTest
-	@ValueSource(strings = {"0", "-10", "150"})
-	@DisplayName("할인율이 0 이하 또는 100 초과일 경우 예외가 발생한다")
-	void invalidPercentageRateThrowsException(String rate) {
-		assertThatThrownBy(() -> new PercentageDiscountPolicy(new BigDecimal(rate)))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("정률 할인은 0보다 크고 100 이하여야 합니다.");
-	}
 }

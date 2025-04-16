@@ -2,13 +2,18 @@ package kr.hhplus.be.server.domain.point;
 
 import java.math.BigDecimal;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.EqualsAndHashCode;
+import kr.hhplus.be.server.domain.point.exception.PointNotEnoughException;
 import lombok.NoArgsConstructor;
 
 @Embeddable
 @NoArgsConstructor
-@EqualsAndHashCode
+@AttributeOverrides({
+	@AttributeOverride(name = "amount", column = @Column(name = "balance"))
+})
 public class Balance {
 
 	private BigDecimal amount;
@@ -34,6 +39,10 @@ public class Balance {
 	public void subtract(BigDecimal useAmount) {
 		if (useAmount == null || useAmount.compareTo(BigDecimal.ZERO) <= 0) {
 			throw new IllegalArgumentException("사용 금액은 null이 아니며, 0보다 커야 합니다. 사용 시도 금액 : %s".formatted(useAmount));
+		}
+
+		if (this.amount.compareTo(useAmount) < 0) {
+			throw new PointNotEnoughException(this.amount, useAmount);
 		}
 		this.amount = this.amount.subtract(useAmount);
 	}

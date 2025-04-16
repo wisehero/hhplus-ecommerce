@@ -3,53 +3,52 @@ package kr.hhplus.be.server.domain.order;
 import java.math.BigDecimal;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.product.Product;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Getter
+@Table(name = "order_product")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderProduct {
+@Getter
+public class OrderProduct extends BaseTimeEntity {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
 	private Long orderId;
-
 	private Long productId;
-
 	private String productName;
-
-	private BigDecimal amount;
-
+	private BigDecimal unitPrice;
 	private Long quantity;
+	private BigDecimal subTotalPrice;
 
-	@Builder
-	private OrderProduct(Long orderId, Long productId, String productName, BigDecimal amount, Long quantity) {
+	private OrderProduct(Long orderId, Long productId, String productName, BigDecimal unitPrice,
+		Long quantity,
+		BigDecimal subTotalPrice) {
 		this.orderId = orderId;
 		this.productId = productId;
 		this.productName = productName;
-		this.amount = amount;
+		this.unitPrice = unitPrice;
 		this.quantity = quantity;
+		this.subTotalPrice = subTotalPrice;
 	}
 
 	public static OrderProduct create(Product product, Long quantity) {
-		if (quantity == null || quantity <= 0) {
-			throw new IllegalArgumentException("주문 수량은 0보다 커야 합니다.");
-		}
-
-		BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
-
-		return OrderProduct.builder()
-			.productId(product.getId())
-			.orderId(null)
-			.amount(totalAmount)
-			.quantity(quantity)
-			.build();
+		return new OrderProduct(
+			null,
+			product.getId(),
+			product.getProductName(),
+			product.getPrice(),
+			quantity,
+			product.getPrice().multiply(BigDecimal.valueOf(quantity))
+		);
 	}
 
 	public void assignOrderId(Long orderId) {

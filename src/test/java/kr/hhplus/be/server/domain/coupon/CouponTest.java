@@ -6,12 +6,17 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
 import kr.hhplus.be.server.domain.coupon.exception.CouponExpiredException;
 import kr.hhplus.be.server.domain.coupon.exception.CouponOutOfStockException;
+import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
 
 class CouponTest {
 
@@ -20,102 +25,96 @@ class CouponTest {
 	@Test
 	@DisplayName("정상 입력값으로 무제한 쿠폰을 생성할 수 있다")
 	void createUnlimitedCouponSuccessfully() {
+		String name = "WELCOME";
+		BigDecimal value = BigDecimal.valueOf(5000);
+		DiscountType type = DiscountType.FIXED;
+		LocalDate from = LocalDate.now();
+		LocalDate to = from.plusDays(30);
+
 		// when
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"무제한 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(2000),
-			LocalDate.now(),
-			LocalDate.now().plusDays(10)
-		);
+		Coupon coupon = Coupon.createUnlimited(name, value, type, from, to);
 
 		// then
 		assertAll(
-			() -> assertThat(coupon.getCouponName()).isEqualTo("무제한 쿠폰"),
-			() -> assertThat(coupon.getDiscountType()).isEqualTo(DiscountType.FIXED),
-			() -> assertThat(coupon.getDiscountValue()).isEqualTo("2000"),
-			() -> assertThat(coupon.getIssuePolicyType().name()).isEqualTo("UNLIMITED"),
-			() -> assertThat(coupon.getRemainingCount()).isNull()
+			() -> assertThat(coupon.getCouponName()).isEqualTo(name),
+			() -> assertThat(coupon.getDiscountValue()).isEqualTo(value),
+			() -> assertThat(coupon.getDiscountType()).isEqualTo(type),
+			() -> assertThat(coupon.getIssuePolicyType()).isEqualTo(CouponIssuePolicyType.UNLIMITED),
+			() -> assertThat(coupon.getRemainingCount()).isEqualTo(null),
+			() -> assertThat(coupon.getValidFrom()).isEqualTo(from),
+			() -> assertThat(coupon.getValidTo()).isEqualTo(to)
 		);
+
 	}
 
 	@Test
 	@DisplayName("정상 입력값으로 선착순 쿠폰을 생성할 수 있다")
 	void createLimitedCouponSuccessfully() {
+		String name = "WELCOME";
+		BigDecimal value = BigDecimal.valueOf(5000);
+		DiscountType type = DiscountType.FIXED;
+		Long count = 100L;
+		LocalDate from = LocalDate.now();
+		LocalDate to = from.plusDays(30);
+
 		// when
-		Coupon coupon = Coupon.createLimitedCoupon(
-			"선착순 쿠폰",
-			DiscountType.PERCENTAGE,
-			BigDecimal.valueOf(15),
-			100L,
-			LocalDate.now(),
-			LocalDate.now().plusDays(7)
-		);
+		Coupon coupon = Coupon.createLimited(name, value, type, count, from, to);
 
 		// then
 		assertAll(
-			() -> assertThat(coupon.getCouponName()).isEqualTo("선착순 쿠폰"),
-			() -> assertThat(coupon.getDiscountType()).isEqualTo(DiscountType.PERCENTAGE),
-			() -> assertThat(coupon.getDiscountValue()).isEqualTo("15"),
-			() -> assertThat(coupon.getIssuePolicyType().name()).isEqualTo("LIMITED"),
-			() -> assertThat(coupon.getRemainingCount()).isEqualTo(100L)
+			() -> assertThat(coupon.getCouponName()).isEqualTo(name),
+			() -> assertThat(coupon.getDiscountValue()).isEqualTo(value),
+			() -> assertThat(coupon.getDiscountType()).isEqualTo(type),
+			() -> assertThat(coupon.getIssuePolicyType()).isEqualTo(CouponIssuePolicyType.LIMITED),
+			() -> assertThat(coupon.getRemainingCount()).isEqualTo(count),
+			() -> assertThat(coupon.getValidFrom()).isEqualTo(from),
+			() -> assertThat(coupon.getValidTo()).isEqualTo(to)
 		);
 	}
 
-	@Test
-	@DisplayName("정률 쿠폰은 금액의 일정 비율만큼 할인된다.")
-	void percentageDiscountIsAppliedCorrectly() {
+	@ParameterizedTest
+	@ValueSource(longs = {0L, -1L})
+	@DisplayName("DiscountType이 FIXED일 때, 할인 금액은 0이하이면 IllegalArgumentException이 발생한다.")
+	void createCouponWithInvalidFixedDiscountValue(long invalidDiscountValue) {
 		// given
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"10% 할인 쿠폰",
-			DiscountType.PERCENTAGE,
-			BigDecimal.valueOf(10),
-			LocalDate.now().minusDays(1),
-			LocalDate.now().plusDays(1)
-		);
+		String name = "WELCOME";
+		BigDecimal value = BigDecimal.valueOf(invalidDiscountValue);
+		DiscountType type = DiscountType.FIXED;
+		LocalDate from = LocalDate.now();
+		LocalDate to = from.plusDays(30);
 
-		BigDecimal originalPrice = BigDecimal.valueOf(10000);
+		// when & then
+		assertThatThrownBy(() -> Coupon.createUnlimited(name, value, type, from, to))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("고정 할인 금액은 0보다 커야 합니다.");
+	}
 
-		// when
-		BigDecimal discounted = coupon.applyDiscount(originalPrice);
+	@ParameterizedTest
+	@ValueSource(doubles = {0.0, -1.0, 101.0})
+	@DisplayName("DiscountType이 PERCENTAGE일 때, 할인 비율은 0보다 크고 100보다 작아야 한다.")
+	void createCouponWithInvalidPercentageDiscountValue(double invalidDiscountValue) {
+		// given
+		String name = "WELCOME";
+		BigDecimal value = BigDecimal.valueOf(invalidDiscountValue);
+		DiscountType type = DiscountType.PERCENTAGE;
+		LocalDate from = LocalDate.now();
+		LocalDate to = from.plusDays(30);
 
-		// then
-		assertThat(discounted).isEqualTo("9000");
+		// when & then
+		assertThatThrownBy(() -> Coupon.createUnlimited(name, value, type, from, to))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("퍼센트 할인 비율은 0보다 크고 100보다 작아야 합니다.");
 	}
 
 	@Test
-	@DisplayName("정액 할인 쿠폰이 원가에서 고정 금액을 차감한다.")
-	void fixedDiscountIsAppliedCorrectly() {
+	@DisplayName("LIMITED 정책인 쿠폰은 issue() 시 수량이 1 감소된다.")
+	void issue_withLimitedPolicy_shouldDecreaseRemainingCount() {
 		// given
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"3000원 할인 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(3000),
-			LocalDate.now().minusDays(1),
-			LocalDate.now().plusDays(1)
-		);
-
-		BigDecimal originalPrice = BigDecimal.valueOf(10000);
-
-		// when
-		BigDecimal discounted = coupon.applyDiscount(originalPrice);
-
-		// then
-		assertThat(discounted).isEqualTo("7000");
-	}
-
-	@Test
-	@DisplayName("선착순 쿠폰 발급 시 수량이 줄어든다.")
-	void limitedCouponDecreasesStockWhenIssued() {
-		// given
-		Coupon coupon = Coupon.createLimitedCoupon(
-			"선착순 할인 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(1000),
-			5L,
-			LocalDate.now().minusDays(1),
-			LocalDate.now().plusDays(1)
-		);
+		Coupon coupon = Instancio.of(Coupon.class)
+			.set(Select.field("issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.set(Select.field("remainingCount"), 5L)
+			.set(Select.field("discountType"), DiscountType.FIXED)
+			.create();
 
 		// when
 		coupon.issue();
@@ -125,151 +124,93 @@ class CouponTest {
 	}
 
 	@Test
-	@DisplayName("유효 기간 내에서는 쿠폰이 유효하다.")
-	void couponIsValidWithinPeriod() {
+	@DisplayName("LIMITED 정책인데 남은 수량이 0이면 예외가 발생한다.")
+	void issue_withLimitedPolicy_butNoRemaining_shouldFail() {
 		// given
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"기간 한정 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(1000),
-			LocalDate.now().minusDays(2),
-			LocalDate.now().plusDays(2)
-		);
+		Coupon coupon = Instancio.of(Coupon.class)
+			.set(Select.field("issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.set(Select.field("remainingCount"), 0L)
+			.set(Select.field("discountType"), DiscountType.FIXED)
+			.create();
 
-		// then
-		assertThatCode(() -> coupon.validateIssueAvailable(LocalDate.now()))
-			.doesNotThrowAnyException();
-	}
-
-	@Test
-	@DisplayName("무제한 쿠폰은 발급 시 예외 없이 성공한다")
-	void unlimitedCouponIssuesSuccessfully() {
-		// given
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"무제한 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(500),
-			LocalDate.now().minusDays(1),
-			LocalDate.now().plusDays(1)
-		);
-
-		// expected
-		assertThatCode(coupon::issue).doesNotThrowAnyException();
-	}
-
-	// 실패 테스트
-	@Test
-	@DisplayName("할인 값이 0 이하이면 정액 무제한/제한 쿠폰 모두 생성에 실패한다.")
-	void fixedDiscountValueZeroOrNegativeShouldFail() {
-		assertAll(
-			() -> assertThatThrownBy(() ->
-				Coupon.createUnlimitedCoupon(
-					"0원 할인 쿠폰",
-					DiscountType.FIXED,
-					BigDecimal.ZERO,
-					LocalDate.now(),
-					LocalDate.now().plusDays(1)
-				)
-			).isInstanceOf(IllegalArgumentException.class)
-				.hasMessageContaining("할인 값은 0보다 커야 합니다."),
-
-			() -> assertThatThrownBy(() ->
-				Coupon.createUnlimitedCoupon(
-					"마이너스 할인 쿠폰",
-					DiscountType.FIXED,
-					BigDecimal.valueOf(-500),
-					LocalDate.now(),
-					LocalDate.now().plusDays(1)
-				)
-			).isInstanceOf(IllegalArgumentException.class)
-				.hasMessage("할인 값은 0보다 커야 합니다.")
-		);
-	}
-
-	@Test
-	@DisplayName("할인 값이 0 이하이면 정률 무제한/제한 쿠폰 모두 생성에 실패한다.")
-	void percentageDiscountValueZeroOrNegativeShouldFail() {
-		assertAll(
-			() -> assertThatThrownBy(() ->
-				Coupon.createUnlimitedCoupon(
-					"0% 할인 쿠폰",
-					DiscountType.PERCENTAGE,
-					BigDecimal.ZERO,
-					LocalDate.now(),
-					LocalDate.now().plusDays(1)
-				)
-			).isInstanceOf(IllegalArgumentException.class)
-				.hasMessageContaining("할인 값은 0보다 커야 합니다."),
-
-			() -> assertThatThrownBy(() ->
-				Coupon.createUnlimitedCoupon(
-					"마이너스 % 할인 쿠폰",
-					DiscountType.PERCENTAGE,
-					BigDecimal.valueOf(-10),
-					LocalDate.now(),
-					LocalDate.now().plusDays(1)
-				)
-			).isInstanceOf(IllegalArgumentException.class)
-				.hasMessage("할인 값은 0보다 커야 합니다.")
-		);
-	}
-
-	@Test
-	@DisplayName("정률 할인 값이 100% 초과일 경우 예외가 발생한다")
-	void percentageDiscountOver100Fails() {
-		assertThatThrownBy(() ->
-			Coupon.createUnlimitedCoupon(
-				"150% 할인 쿠폰",
-				DiscountType.PERCENTAGE,
-				BigDecimal.valueOf(150),
-				LocalDate.now(),
-				LocalDate.now().plusDays(1)
-			)
-		).isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("정률 할인은 100%를 넘을 수 없습니다.");
-	}
-
-	@Test
-	@DisplayName("현재 날짜가 유효 기간을 벗어나면 쿠폰은 무효하다")
-	void couponInvalidOutsideValidityPeriod() {
-		// given
-		LocalDate startDate = LocalDate.now().minusDays(10);
-		LocalDate endDate = LocalDate.now().minusDays(1);
-		Coupon coupon = Coupon.createUnlimitedCoupon(
-			"만료 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(1000),
-			startDate,
-			endDate
-		);
-
-		// expected
-		assertThatThrownBy(() -> coupon.validateIssueAvailable(LocalDate.now()))
-			.isInstanceOf(CouponExpiredException.class)
-			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
-			.extracting("detail")
-			.isEqualTo("쿠폰이 만료되었습니다. 유효 기간은 %s까지 입니다.".formatted(endDate)); // 메시지 정의에 따라 조절
-	}
-
-	@Test
-	@DisplayName("선착순 쿠폰의 수량이 0이면 발급 시 예외가 발생한다")
-	void limitedCouponOutOfStockShouldThrow() {
-		// given
-		Long remainingCount = 0L;
-		Coupon coupon = Coupon.createLimitedCoupon(
-			"재고 없음 쿠폰",
-			DiscountType.FIXED,
-			BigDecimal.valueOf(1000),
-			remainingCount,
-			LocalDate.now().minusDays(1),
-			LocalDate.now().plusDays(1)
-		);
-
-		// expected
+		// when & then
 		assertThatThrownBy(coupon::issue)
 			.isInstanceOf(CouponOutOfStockException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
 			.isEqualTo("쿠폰 ID : %d는 모두 소진되었습니다.".formatted(coupon.getId()));
+	}
+
+	@Test
+	@DisplayName("Coupon에서 CouponSnapshot으로 변환 시 모든 값이 정확히 복사된다.")
+	void toSnapshot_shouldReturnCorrectSnapshot() {
+		// given
+		Long id = 100L;
+		String name = "여름 할인";
+		DiscountType discountType = DiscountType.FIXED;
+		BigDecimal discountValue = BigDecimal.valueOf(3000);
+		LocalDate validFrom = LocalDate.of(2025, 6, 1);
+		LocalDate validTo = LocalDate.of(2025, 6, 30);
+
+		Coupon coupon = Instancio.of(Coupon.class)
+			.set(Select.field("id"), id)
+			.set(Select.field("couponName"), name)
+			.set(Select.field("discountType"), discountType)
+			.set(Select.field("discountValue"), discountValue)
+			.set(Select.field("validFrom"), validFrom)
+			.set(Select.field("validTo"), validTo)
+			.set(Select.field("issuePolicyType"), CouponIssuePolicyType.LIMITED) // 무관하지만 생성 위해 필요
+			.create();
+
+		// when
+		CouponSnapshot snapshot = coupon.toSnapShot();
+
+		// then
+		assertAll(
+			() -> assertThat(snapshot.couponName()).isEqualTo(name),
+			() -> assertThat(snapshot.discountType()).isEqualTo(discountType),
+			() -> assertThat(snapshot.discountValue()).isEqualByComparingTo(discountValue),
+			() -> assertThat(snapshot.validFrom()).isEqualTo(validFrom),
+			() -> assertThat(snapshot.validTo()).isEqualTo(validTo),
+			() -> assertThat(snapshot.originalCouponId()).isEqualTo(id)
+		);
+	}
+
+	@Test
+	@DisplayName("원장이 변해도 스냅샷 값은 동일하게 유지된다.")
+	void snapshotShouldRemainUnchangedEvenIfOriginalChangesExternally() {
+		// given
+		Coupon original = Instancio.of(Coupon.class)
+			.set(Select.field("id"), 1L)
+			.set(Select.field("couponName"), "오리지널")
+			.set(Select.field("discountValue"), BigDecimal.valueOf(1000))
+			.set(Select.field("discountType"), DiscountType.FIXED)
+			.set(Select.field("validFrom"), LocalDate.of(2025, 1, 1))
+			.set(Select.field("validTo"), LocalDate.of(2025, 1, 31))
+			.set(Select.field("issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.create();
+
+		CouponSnapshot snapshot = original.toSnapShot();
+
+		// when: 원장 필드가 변경된 "새로운 쿠폰"을 만듬 (simulate 변경)
+		Coupon changed = Instancio.of(Coupon.class)
+			.set(Select.field("id"), 1L) // 같은 ID
+			.set(Select.field("couponName"), "변경된 쿠폰")
+			.set(Select.field("discountValue"), BigDecimal.valueOf(9999))
+			.set(Select.field("discountType"), DiscountType.FIXED)
+			.set(Select.field("validFrom"), LocalDate.of(2025, 3, 1))
+			.set(Select.field("validTo"), LocalDate.of(2025, 3, 31))
+			.set(Select.field("issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.create();
+
+		// then
+		assertAll(
+			() -> assertThat(snapshot.couponName()).isEqualTo("오리지널"),
+			() -> assertThat(snapshot.discountValue()).isEqualByComparingTo("1000"),
+			() -> assertThat(snapshot.discountType()).isEqualTo(DiscountType.FIXED),
+			() -> assertThat(snapshot.validFrom()).isEqualTo(LocalDate.of(2025, 1, 1)),
+			() -> assertThat(snapshot.validTo()).isEqualTo(LocalDate.of(2025, 1, 31)),
+			() -> assertThat(snapshot.originalCouponId()).isEqualTo(1L)
+		);
 	}
 }

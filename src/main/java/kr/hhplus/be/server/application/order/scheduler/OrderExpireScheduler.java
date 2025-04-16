@@ -35,15 +35,15 @@ public class OrderExpireScheduler {
 
 		for (Order order : expireTargetOrders) {
 			try {
-				Order expireOrder = orderService.expireOrder(order.getId());
+				Order expireOrder = orderService.expireOrder(order);
 
 				List<OrderProduct> orderProducts = orderService.getOrderProducts(expireOrder.getId());
 				for (OrderProduct orderProduct : orderProducts) {
 					productService.restoreStock(orderProduct.getProductId(), orderProduct.getQuantity());
 				}
 
-				if (expireOrder.hasCouponApplied()) {
-					couponService.restoreUserCoupon(expireOrder.getUserCouponId());
+				if (expireOrder.isCouponApplied()) {
+					couponService.restorePublishedCoupon(expireOrder.getPublishedCouponId());
 				}
 			} catch (Exception e) {
 				log.warn("[주문 만료 실패] orderId={}, message={}", order.getId(), e.getMessage());

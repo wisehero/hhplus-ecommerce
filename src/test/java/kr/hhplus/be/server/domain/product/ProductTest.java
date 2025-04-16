@@ -2,9 +2,10 @@ package kr.hhplus.be.server.domain.product;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.math.BigDecimal;
 import java.util.stream.Stream;
 
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,51 +19,45 @@ class ProductTest {
 	@DisplayName("상품의 재고를 감소시킨다.")
 	void reduceStockSuccess() {
 		// given
-		Product product = Product.builder()
-			.productName("상품1")
-			.price(BigDecimal.valueOf(10000))
-			.stock(10L)
-			.build();
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 10L)
+			.create();
 
 		// when
-		product.decreaseStock(1L);
+		product.decreaseStock(3L);
 
 		// then
-		assertThat(product.getStock()).isEqualTo(9L);
+		assertThat(product.getStock()).isEqualTo(7L);
 	}
 
 	@Test
-	@DisplayName("상품의 재고를 증가시킨다.")
-	void increaseStockSuccess() {
+	@DisplayName("재고 증가 성공 시 재고가 올바르게 증가한다.")
+	void increaseStock_success() {
 		// given
-		Product product = Product.builder()
-			.productName("상품1")
-			.price(BigDecimal.valueOf(10000))
-			.stock(10L)
-			.build();
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
 
 		// when
-		product.increaseStock(1L);
+		product.increaseStock(3L);
 
 		// then
-		assertThat(product.getStock()).isEqualTo(11L);
+		assertThat(product.getStock()).isEqualTo(8L);
 	}
 
 	@ParameterizedTest
 	@MethodSource("provideValues")
-	@DisplayName("상품의 재고를 증가시킬 때, 수량이 null이거나 0이하라면 예외가 발생한다.")
+	@DisplayName("상품의 재고를 증가시킬 때, 수량이 null이거나 0이하라면 IllegalArgumentException이 발생한다.")
 	void increaseStockFailIfQuantityIsNullOrLeoZero(Long invalidQuantity) {
 		// given
-		Product product = Product.builder()
-			.productName("상품1")
-			.price(BigDecimal.valueOf(10000))
-			.stock(10L)
-			.build();
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
 
-		// expected
+		// when & then
 		assertThatThrownBy(() -> product.increaseStock(invalidQuantity))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("수량은 null이 아니며, 0보다 커야 합니다. 증가 시도 수량 : %d".formatted(invalidQuantity));
+			.hasMessage("수량이 null이거나 0 이하입니다.");
 	}
 
 	@ParameterizedTest
@@ -70,35 +65,30 @@ class ProductTest {
 	@DisplayName("상품의 재고를 감소시킬 때, 수량이 null이거나 0이하라면 예외가 발생한다.")
 	void reduceStockFailIfQuantityIsNullOrLoeZero(Long invalidQuantity) {
 		// given
-		Product product = Product.builder()
-			.productName("상품1")
-			.price(BigDecimal.valueOf(10000))
-			.stock(10L)
-			.build();
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 10L)
+			.create();
 
-		// expected
+		// when & then
 		assertThatThrownBy(() -> product.decreaseStock(invalidQuantity))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("수량은 null이 아니며, 0보다 커야 합니다. 사용 시도 수량 : %d".formatted(invalidQuantity));
+			.hasMessage("수량이 null이거나 0 이하입니다.");
 	}
 
 	@Test
-	@DisplayName("상품의 재고가 이미 0이라면 재고는 차감될 수 없다.")
+	@DisplayName("재고보다 많은 수량을 감소시키면 ProductOutOfStockException이 발생한다.")
 	void reduceStockFailIfStockAlreadyZero() {
 		// given
-		Product product = Product.builder()
-			.productName("상품1")
-			.price(BigDecimal.valueOf(10000))
-			.stock(0L)
-			.build();
+		Product product = Instancio.of(Product.class)
+			.set(Select.field(Product::getStock), 5L)
+			.create();
 
-		// expected
-		assertThatThrownBy(() -> product.decreaseStock(1L))
+		// when & then
+		assertThatThrownBy(() -> product.decreaseStock(10L))
 			.isInstanceOf(ProductOutOfStockException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
-			.isEqualTo("재고가 부족합니다. 현재 재고 : %d, 사용 시도 수량 : %d".formatted(0L, 1L));
-
+			.isEqualTo("재고가 부족합니다. 현재 재고 : 5, 감소 시도 수량 : 10");
 	}
 
 	private static Stream<Long> provideValues() {

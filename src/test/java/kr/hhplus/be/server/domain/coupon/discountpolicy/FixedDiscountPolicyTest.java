@@ -30,14 +30,4 @@ class FixedDiscountPolicyTest {
 
 		assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
 	}
-
-	@ParameterizedTest
-	@ValueSource(strings = {"0", "-100", "-1"})
-	@DisplayName("할인 금액이 0 이하일 경우 예외가 발생한다")
-	void invalidDiscountAmountThrowsException(String value) {
-		assertThatThrownBy(() -> new FixedDiscountPolicy(new BigDecimal(value)))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("고정 할인 금액은 0보다 커야 합니다.");
-	}
-
 }

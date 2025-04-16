@@ -3,31 +3,29 @@ package kr.hhplus.be.server.domain.product;
 import java.math.BigDecimal;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import kr.hhplus.be.server.domain.base.BaseTimeEntity;
+import jakarta.persistence.Table;
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "product")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Product extends BaseTimeEntity {
+public class Product {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
 	private String productName;
-
 	private String description;
-
 	private BigDecimal price;
-
 	private Long stock;
 
-	@Builder
 	private Product(String productName, String description, BigDecimal price, Long stock) {
 		this.productName = productName;
 		this.description = description;
@@ -36,39 +34,30 @@ public class Product extends BaseTimeEntity {
 	}
 
 	public static Product create(String productName, String description, BigDecimal price, Long stock) {
-		if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
-			throw new IllegalArgumentException("가격은 0 이상이어야 합니다. 입력값: " + price);
+		if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+			throw new IllegalArgumentException("상품 가격이 null이거나 0 이하입니다.");
 		}
-
 		if (stock == null || stock < 0) {
-			throw new IllegalArgumentException("재고는 0 이상이어야 합니다. 입력값: " + stock);
+			throw new IllegalArgumentException("상품 재고가 null이거나 음수입니다.");
 		}
 
-		return Product.builder()
-			.productName(productName)
-			.description(description)
-			.price(price)
-			.stock(stock)
-			.build();
+		return new Product(productName, description, price, stock);
 	}
 
 	public void decreaseStock(Long quantity) {
 		if (quantity == null || quantity <= 0) {
-			throw new IllegalArgumentException("수량은 null이 아니며, 0보다 커야 합니다. 사용 시도 수량 : %d".formatted(quantity));
+			throw new IllegalArgumentException("수량이 null이거나 0 이하입니다.");
 		}
-
 		if (this.stock < quantity) {
 			throw new ProductOutOfStockException(this.stock, quantity);
 		}
-
 		this.stock -= quantity;
 	}
 
 	public void increaseStock(Long quantity) {
 		if (quantity == null || quantity <= 0) {
-			throw new IllegalArgumentException("수량은 null이 아니며, 0보다 커야 합니다. 증가 시도 수량 : %d".formatted(quantity));
+			throw new IllegalArgumentException("수량이 null이거나 0 이하입니다.");
 		}
-
 		this.stock += quantity;
 	}
 }

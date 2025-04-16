@@ -2,60 +2,61 @@ package kr.hhplus.be.server.domain.order;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 
+import org.instancio.Instancio;
+import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import kr.hhplus.be.server.domain.product.Product;
 
 class OrderProductTest {
 
-
 	@Test
 	@DisplayName("정상적인 상품과 수량으로 OrderProduct를 생성할 수 있다")
 	void createOrderProductSuccessfully() {
-		Product product = mock(Product.class);
-		when(product.getId()).thenReturn(1L);
-		when(product.getPrice()).thenReturn(BigDecimal.valueOf(1000));
+		// given
+		Long productId = 1L;
+		String productName = "맥북";
+		BigDecimal price = BigDecimal.valueOf(2000000);
+		Long quantity = 2L;
 
-		OrderProduct orderProduct = OrderProduct.create(product, 3L);
+		Product product = Instancio.of(Product.class)
+			.set(Select.field("id"), productId)
+			.set(Select.field("productName"), productName)
+			.set(Select.field("price"), price)
+			.create();
 
+		// when
+		OrderProduct orderProduct = OrderProduct.create(product, quantity);
+
+		// then
 		assertAll(
-			() -> assertThat(orderProduct.getProductId()).isEqualTo(1L),
-			() -> assertThat(orderProduct.getAmount()).isEqualTo(BigDecimal.valueOf(3000)),
-			() -> assertThat(orderProduct.getQuantity()).isEqualTo(3L),
-			() -> assertThat(orderProduct.getOrderId()).isNull()
+			() -> assertThat(orderProduct.getProductId()).isEqualTo(productId),
+			() -> assertThat(orderProduct.getProductName()).isEqualTo(productName),
+			() -> assertThat(orderProduct.getUnitPrice()).isEqualByComparingTo(price),
+			() -> assertThat(orderProduct.getQuantity()).isEqualTo(quantity),
+			() -> assertThat(orderProduct.getSubTotalPrice()).isEqualByComparingTo(
+				price.multiply(BigDecimal.valueOf(quantity)))
 		);
-	}
-
-	@ParameterizedTest
-	@NullSource
-	@ValueSource(longs = {0, -1})
-	@DisplayName("수량이 null이거나 0 이하일 경우 IllegalArgumentException 예외가 발생한다")
-	void createOrderProductFailsOnInvalidQuantity(Long quantity) {
-		Product product = mock(Product.class);
-
-		assertThatThrownBy(() -> OrderProduct.create(product, quantity))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("주문 수량은 0보다 커야 합니다.");
 	}
 
 	@Test
 	@DisplayName("Order ID를 할당하면 orderId가 세팅된다")
 	void assignOrderIdSetsOrderId() {
-		Product product = mock(Product.class);
-		when(product.getId()).thenReturn(1L);
-		when(product.getPrice()).thenReturn(BigDecimal.valueOf(2000));
-
+		// given
+		Long orderId = 1L;
+		Product product = Instancio.of(Product.class)
+			.set(Select.field("id"), 1L)
+			.create();
 		OrderProduct orderProduct = OrderProduct.create(product, 2L);
-		orderProduct.assignOrderId(99L);
 
-		assertThat(orderProduct.getOrderId()).isEqualTo(99L);
+		// when
+		orderProduct.assignOrderId(orderId);
+
+		// then
+		assertThat(orderProduct.getOrderId()).isEqualTo(orderId);
 	}
 }

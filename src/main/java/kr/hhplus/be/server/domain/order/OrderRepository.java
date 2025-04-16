@@ -5,9 +5,12 @@ import java.util.List;
 
 public interface OrderRepository {
 
+	Order findOrderById(Long orderId);
+
 	Order save(Order order);
 
-	Order findById(Long id);
+	List<Order> findAllPendingBefore(OrderStatus orderStatus, LocalDateTime deadLine);
 
-	List<Order> findAllPendingBefore(OrderStatus orderStatus, LocalDateTime deadline);
+	List<OrderProduct> findOrderProductsByOrderId(Long orderId);
+
 }

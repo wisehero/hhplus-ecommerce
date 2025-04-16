@@ -1,22 +1,29 @@
 package kr.hhplus.be.server.domain.user;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import kr.hhplus.be.server.domain.base.BaseTimeEntity;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User extends BaseTimeEntity {
+@Getter
+public class User {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private String username;
-
-	public User(Long id, String username) {
+	public User(Long id) {
 		this.id = id;
-		this.username = username;
+	}
+
+	public static User create(Long id) {
+		return new User(id);
 	}
 }

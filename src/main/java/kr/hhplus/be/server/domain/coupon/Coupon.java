@@ -4,138 +4,124 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
-import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountPolicy;
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
-import kr.hhplus.be.server.domain.coupon.exception.CouponExpiredException;
-import kr.hhplus.be.server.domain.coupon.exception.CouponOutOfStockException;
-import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicy;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "coupon")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Coupon extends BaseTimeEntity {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	private String couponName;
 
 	private BigDecimal discountValue;
 
+	@Enumerated(EnumType.STRING)
 	private DiscountType discountType;
 
+	@Enumerated(EnumType.STRING)
 	private CouponIssuePolicyType issuePolicyType;
 
 	private Long remainingCount;
 
-	private LocalDate startDate;
-	private LocalDate endDate;
+	private LocalDate validFrom;
+
+	private LocalDate validTo;
 
 	private Coupon(
 		String couponName,
-		DiscountType discountType,
 		BigDecimal discountValue,
+		DiscountType discountType,
 		CouponIssuePolicyType issuePolicyType,
 		Long remainingCount,
-		LocalDate startDate,
-		LocalDate endDate
+		LocalDate validFrom,
+		LocalDate validTo
 	) {
-		validateDiscountValue(discountType, discountValue);
+		if (discountType == DiscountType.FIXED && discountValue.compareTo(BigDecimal.ZERO) <= 0) {
+			throw new IllegalArgumentException("고정 할인 금액은 0보다 커야 합니다.");
+		}
+
+		if (discountType == DiscountType.PERCENTAGE && (discountValue.compareTo(BigDecimal.ZERO) <= 0
+			|| discountValue.compareTo(BigDecimal.valueOf(100)) > 0)) {
+			throw new IllegalArgumentException("퍼센트 할인 비율은 0보다 크고 100보다 작아야 합니다.");
+		}
 		this.couponName = couponName;
-		this.discountType = discountType;
 		this.discountValue = discountValue;
+		this.discountType = discountType;
 		this.issuePolicyType = issuePolicyType;
 		this.remainingCount = remainingCount;
-		this.startDate = startDate;
-		this.endDate = endDate;
+		this.validFrom = validFrom;
+		this.validTo = validTo;
 	}
 
-	public static Coupon createLimitedCoupon(
+	public static Coupon createUnlimited(
 		String couponName,
-		DiscountType discountType,
 		BigDecimal discountValue,
-		Long remainingCount,
-		LocalDate startDate,
-		LocalDate endDate
+		DiscountType discountType,
+		LocalDate validFrom,
+		LocalDate validTo
 	) {
 		return new Coupon(
 			couponName,
-			discountType,
 			discountValue,
-			CouponIssuePolicyType.LIMITED,
-			remainingCount,
-			startDate,
-			endDate
-		);
-	}
-
-	public static Coupon createUnlimitedCoupon(
-		String couponName,
-		DiscountType discountType,
-		BigDecimal discountValue,
-		LocalDate startDate,
-		LocalDate endDate
-	) {
-		return new Coupon(
-			couponName,
 			discountType,
-			discountValue,
 			CouponIssuePolicyType.UNLIMITED,
 			null,
-			startDate,
-			endDate
+			validFrom,
+			validTo
 		);
 	}
 
-	public BigDecimal applyDiscount(BigDecimal originalPrice) {
-		DiscountPolicy policy = discountType.toPolicy(discountValue);
-		return policy.apply(originalPrice);
-	}
-
-	private boolean isInValidPeriod(LocalDate now) {
-		return !(now.isBefore(startDate) || now.isAfter(endDate));
-	}
-
-	public void validateIssueAvailable(LocalDate now) {
-		if (!isInValidPeriod(now)) {
-			throw new CouponExpiredException(this.endDate);
-		}
-		if (!canIssue()) {
-			throw new CouponOutOfStockException(this.id);
-		}
+	public static Coupon createLimited(
+		String couponName,
+		BigDecimal discountValue,
+		DiscountType discountType,
+		Long remainingCount,
+		LocalDate validFrom,
+		LocalDate validTo
+	) {
+		return new Coupon(
+			couponName,
+			discountValue,
+			discountType,
+			CouponIssuePolicyType.LIMITED,
+			remainingCount,
+			validFrom,
+			validTo
+		);
 	}
 
 	public void issue() {
 		this.issuePolicyType.toPolicy().issue(this);
 	}
 
-	private CouponIssuePolicy getIssuePolicy() {
-		return issuePolicyType.toPolicy();
-	}
-
 	public void decreaseRemainingCount() {
-		this.remainingCount -= 1;
+		this.remainingCount--;
 	}
 
-	private boolean canIssue() {
-		return this.issuePolicyType.toPolicy().canIssue(this);
-	}
-
-	private void validateDiscountValue(DiscountType discountType, BigDecimal discountValue) {
-		if (discountType == null)
-			throw new IllegalArgumentException("할인 타입은 필수입니다.");
-
-		if (discountValue.compareTo(BigDecimal.ZERO) <= 0) {
-			throw new IllegalArgumentException("할인 값은 0보다 커야 합니다.");
-		}
-		if (discountType == DiscountType.PERCENTAGE && discountValue.compareTo(BigDecimal.valueOf(100)) > 0) {
-			throw new IllegalArgumentException("정률 할인은 100%를 넘을 수 없습니다.");
-		}
+	public CouponSnapshot toSnapShot() {
+		return new CouponSnapshot(
+			this.couponName,
+			this.discountType,
+			this.discountValue,
+			this.validFrom,
+			this.validTo,
+			this.id
+		);
 	}
 }
