@@ -150,7 +150,7 @@ class PublishedCouponTest {
 			.isInstanceOf(CouponExpiredException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
-			.isEqualTo("쿠폰이 만료되었습니다. 유효 기간은 %s까지 입니다.".formatted(coupon.toSnapShot().validTo()));
+			.isEqualTo("쿠폰이 만료되었습니다. 유효 기간은 %s까지 입니다.".formatted(coupon.toSnapShot().getValidTo()));
 	}
 
 	@Test

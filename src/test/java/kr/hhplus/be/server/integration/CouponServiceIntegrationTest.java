@@ -62,8 +62,8 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 		assertAll(
 			() -> assertThat(result.getId()).isEqualTo(savedId),
 			() -> assertThat(result.getUserId()).isEqualTo(100L),
-			() -> assertThat(result.getCouponSnapshot().discountValue()).isEqualByComparingTo(BigDecimal.valueOf(1000)),
-			() -> assertThat(result.getCouponSnapshot().discountType()).isEqualTo(DiscountType.FIXED)
+			() -> assertThat(result.getCouponSnapshot().getDiscountValue()).isEqualByComparingTo(BigDecimal.valueOf(1000)),
+			() -> assertThat(result.getCouponSnapshot().getDiscountType()).isEqualTo(DiscountType.FIXED)
 		);
 	}
 

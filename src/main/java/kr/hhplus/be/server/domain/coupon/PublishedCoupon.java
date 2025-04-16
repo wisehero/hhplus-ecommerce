@@ -59,13 +59,13 @@ public class PublishedCoupon {
 			throw new IllegalArgumentException("가격이 null이거나 0 이하입니다.");
 		}
 
-		if (now.isBefore(couponSnapshot.validFrom()) || now.isAfter(couponSnapshot.validTo())) {
-			throw new CouponExpiredException(couponSnapshot.validTo());
+		if (now.isBefore(couponSnapshot.getValidFrom()) || now.isAfter(couponSnapshot.getValidTo())) {
+			throw new CouponExpiredException(couponSnapshot.getValidTo());
 		}
 
 		this.isUsed = true;
-		return this.couponSnapshot.discountType()
-			.toPolicy(couponSnapshot.discountValue())
+		return this.couponSnapshot.getDiscountType()
+			.toPolicy(couponSnapshot.getDiscountValue())
 			.apply(originalPrice);
 	}
 
