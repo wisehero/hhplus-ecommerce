@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
+import kr.hhplus.be.server.domain.product.Product;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,5 +45,14 @@ public class BestSeller extends BaseTimeEntity {
 		this.price = price;
 		this.stock = stock;
 		this.salesCount = salesCount;
+	}
+
+	public static BestSeller create(Product product, Long salesCount) {
+		return new BestSeller(product.getId(), product.getProductName(), product.getDescription(), product.getPrice(),
+			product.getStock(), salesCount);
+	}
+
+	public void addSalesCount(Long salesQuantity) {
+		this.salesCount += salesQuantity;
 	}
 }
