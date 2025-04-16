@@ -29,6 +29,4 @@ public class CouponSnapshot {
 
 	private LocalDate validFrom;
 	private LocalDate validTo;
-
-	private Long originalCouponId;
 }

@@ -171,8 +171,7 @@ class CouponTest {
 			() -> assertThat(snapshot.getDiscountType()).isEqualTo(discountType),
 			() -> assertThat(snapshot.getDiscountValue()).isEqualByComparingTo(discountValue),
 			() -> assertThat(snapshot.getValidFrom()).isEqualTo(validFrom),
-			() -> assertThat(snapshot.getValidTo()).isEqualTo(validTo),
-			() -> assertThat(snapshot.getOriginalCouponId()).isEqualTo(id)
+			() -> assertThat(snapshot.getValidTo()).isEqualTo(validTo)
 		);
 	}
 
@@ -209,8 +208,7 @@ class CouponTest {
 			() -> assertThat(snapshot.getDiscountValue()).isEqualByComparingTo("1000"),
 			() -> assertThat(snapshot.getDiscountType()).isEqualTo(DiscountType.FIXED),
 			() -> assertThat(snapshot.getValidFrom()).isEqualTo(LocalDate.of(2025, 1, 1)),
-			() -> assertThat(snapshot.getValidTo()).isEqualTo(LocalDate.of(2025, 1, 31)),
-			() -> assertThat(snapshot.getOriginalCouponId()).isEqualTo(1L)
+			() -> assertThat(snapshot.getValidTo()).isEqualTo(LocalDate.of(2025, 1, 31))
 		);
 	}
 }
