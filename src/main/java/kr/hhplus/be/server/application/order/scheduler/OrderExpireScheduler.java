@@ -31,7 +31,7 @@ public class OrderExpireScheduler {
 	@Transactional
 	public void expireOrderThenRestoreCouponAndStock() {
 		LocalDateTime deadLine = LocalDateTime.now().minusMinutes(5);
-		List<Order> expireTargetOrders = orderService.getOverDueOrderIds(deadLine);
+		List<Order> expireTargetOrders = orderService.getOverDueOrders(deadLine);
 
 		for (Order order : expireTargetOrders) {
 			try {

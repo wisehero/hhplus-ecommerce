@@ -46,9 +46,15 @@ public class OrderService {
 		return orderRepository.findOrderProductsByOrderId(orderId);
 	}
 
-	public List<Order> getOverDueOrderIds(LocalDateTime deadLine) {
+	public List<Order> getOverDueOrders(LocalDateTime deadLine) {
 		if (deadLine == null)
 			throw new IllegalArgumentException("마감 기한은 null일 수 없습니다.");
 		return orderRepository.findAllPendingBefore(OrderStatus.PENDING, deadLine);
+	}
+
+	public List<Order> getOrdersByCreatedAtBetween(LocalDateTime start, LocalDateTime end) {
+		if (start == null || end == null)
+			throw new IllegalArgumentException("시작일과 종료일은 null일 수 없습니다.");
+		return orderRepository.findPaidOrdersWithinOneHour(start);
 	}
 }

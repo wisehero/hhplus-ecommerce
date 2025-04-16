@@ -18,7 +18,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.order.exception.OrderCannotBeExpiredException;
@@ -262,7 +261,7 @@ class OrderServiceTest {
 			.thenReturn(List.of(overdueOrder));
 
 		// when
-		List<Order> result = orderService.getOverDueOrderIds(deadline);
+		List<Order> result = orderService.getOverDueOrders(deadline);
 
 		// then
 		assertAll(
@@ -276,7 +275,7 @@ class OrderServiceTest {
 	@DisplayName("마감 기한이 null이면 IllegalArgumentException이 발생한다.")
 	void fetchOverdueOrdersFailsWhenDeadlineIsNull() {
 		// when & then
-		assertThatThrownBy(() -> orderService.getOverDueOrderIds(null))
+		assertThatThrownBy(() -> orderService.getOverDueOrders(null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("마감 기한은 null일 수 없습니다.");
 
