@@ -1,8 +1,11 @@
 package kr.hhplus.be.server.application.order.facade;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.Transient;
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
+import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
 import kr.hhplus.be.server.domain.coupon.CouponService;
 import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.order.Order;
@@ -22,7 +25,8 @@ public class OrderFacade {
 	private final OrderService orderService;
 	private final UserService userService;
 
-	public Order createOrder(OrderCreateCommand command) {
+	@Transactional
+	public OrderCreateResult createOrder(OrderCreateCommand command) {
 
 		User findUser = userService.getUserById(command.userId());
 
@@ -33,7 +37,7 @@ public class OrderFacade {
 		command.orderLines().forEach(line -> {
 			Product product = productService.getProductById(line.productId());
 			productService.decreaseStock(product, line.quantity());
-			order.addOrderProduct(product, line.productId());
+			order.addOrderProduct(product, line.quantity());
 		});
 
 		// 적용할 쿠폰이 있어?
@@ -43,6 +47,6 @@ public class OrderFacade {
 			order.applyCoupon(findPublishedCoupon);
 		}
 
-		return orderService.order(order);
+		return OrderCreateResult.from(orderService.order(order));
 	}
 }
