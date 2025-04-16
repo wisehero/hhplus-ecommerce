@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "order_product")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class OrderProduct extends BaseTimeEntity {
+public class OrderProduct {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
