@@ -13,12 +13,12 @@ import kr.hhplus.be.server.domain.order.OrderStatus;
 public interface OrderJpaRepository extends JpaRepository<Order, Long> {
 
 	@Query(
-		"SELECT o FROM Order o WHERE o.orderStatus = :orderStatus AND o.createdAt < :deadline"
+		"SELECT o FROM Order o WHERE o.orderStatus = :orderStatus AND o.orderedAt < :deadline"
 	)
 	List<Order> findAllPendingBefore(@Param("orderStatus") OrderStatus orderStatus,
 		@Param("deadline") LocalDateTime deadline);
 
-	@Query("SELECT o FROM Order o WHERE o.orderStatus = 'PAID' AND o.createdAt >= :oneHourAgo AND o.createdAt < :now")
+	@Query("SELECT o FROM Order o WHERE o.orderStatus = 'PAID' AND o.orderedAt >= :oneHourAgo AND o.orderedAt < :now")
 	List<Order> findPaidOrdersWithinOneHour(@Param("oneHourAgo") LocalDateTime oneHourAgo,
 		@Param("now") LocalDateTime now);
 }

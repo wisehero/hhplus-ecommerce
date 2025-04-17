@@ -136,7 +136,7 @@ public class OrderServiceIntegrationTest extends IntgerationTestSupport {
 	}
 
 	@Test
-	@DisplayName("createdAt이 데드라인 이전이고 상태가 PENDING인 주문만 조회된다.")
+	@DisplayName("orderdAt이 데드라인 이전이고 상태가 PENDING인 주문만 조회된다.")
 	void shouldFilterOnlyPendingAndOverdueOrders() {
 		// given
 		LocalDateTime now = LocalDateTime.now();
@@ -153,6 +153,7 @@ public class OrderServiceIntegrationTest extends IntgerationTestSupport {
 					.ignore(field(Order.class, "id"))
 					.set(field(Order.class, "orderStatus"), OrderStatus.PENDING)
 					.supply(field(Order.class, "orderProducts"), () -> List.of(orderProduct))
+					.set(field(Order.class, "orderedAt"), now.minusMinutes(5 + i))
 					.create();
 			})
 			.toList();
@@ -166,7 +167,7 @@ public class OrderServiceIntegrationTest extends IntgerationTestSupport {
 		assertThat(result)
 			.allSatisfy(order -> {
 				assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
-				assertThat(order.getCreatedAt()).isBefore(deadLine);
+				assertThat(order.getOrderedAt()).isBefore(deadLine);
 			});
 	}
 
@@ -244,5 +245,62 @@ public class OrderServiceIntegrationTest extends IntgerationTestSupport {
 		assertThatThrownBy(() -> orderService.getOrderProducts(null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("주문 ID는 null일 수 없습니다.");
+	}
+
+	@Test
+	@DisplayName("현재로부터 59분 이내에 결제 완료 주문 조회 주문이 1건 있을 경우 조회된다")
+	void shouldReturnSingleRecentPaidOrder() {
+		// given
+		LocalDateTime fixedNow = LocalDateTime.now();
+
+		Product product = Instancio.of(Product.class)
+			.ignore(field(Product.class, "id"))
+			.create();
+		productRepository.save(product);
+
+		OrderProduct orderProduct = OrderProduct.create(product, 2L);
+
+		Order order = Instancio.of(Order.class)
+			.ignore(field(Order.class, "id"))
+			.set(field(Order.class, "orderStatus"), OrderStatus.PAID)
+			.set(field(Order.class, "orderedAt"), fixedNow.minusMinutes(1))
+			.supply(field(Order.class, "orderProducts"), () -> List.of(orderProduct))
+			.create();
+
+		orderRepository.save(order);
+
+		// when
+		List<Order> result = orderService.getPaidOrdersWithinOneHour(fixedNow);
+
+		// then
+		assertAll(
+			() -> assertThat(result).hasSize(1),
+			() -> assertThat(result.get(0).getId()).isEqualTo(order.getId())
+		);
+	}
+
+	@Test
+	@DisplayName("현재로부터 60분 이전 이면 조회되지 않는다")
+	void shouldNotReturnIfCreatedBeforeOneHour() {
+		// given
+		LocalDateTime fixedNow = LocalDateTime.now();
+
+		Product product = productRepository.save(
+			Instancio.of(Product.class).ignore(field(Product.class, "id")).create());
+
+		Order order = Instancio.of(Order.class)
+			.ignore(field(Order.class, "id"))
+			.set(field(Order.class, "orderStatus"), OrderStatus.PAID)
+			.set(field(Order.class, "orderedAt"), fixedNow.minusMinutes(61))
+			.supply(field(Order.class, "orderProducts"), () -> List.of(OrderProduct.create(product, 1L)))
+			.create();
+
+		orderRepository.save(order);
+
+		// when
+		List<Order> result = orderService.getPaidOrdersWithinOneHour(fixedNow);
+
+		// then
+		assertThat(result).isEmpty();
 	}
 }
