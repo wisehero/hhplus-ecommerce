@@ -22,59 +22,6 @@ import kr.hhplus.be.server.interfaces.api.coupon.response.CouponReadAllResponse;
 public interface CouponControllerSpec {
 
 	@Operation(
-		summary = "쿠폰 조회",
-		description = "사용자 ID를 입력받아 해당 사용자의 보유 쿠폰을 조회합니다."
-	)
-	@ApiResponses({
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(
-			responseCode = "200",
-			description = "쿠폰 조회 성공",
-			content = @Content(
-				schema = @Schema(implementation = CouponReadAllResponse.class),
-				mediaType = "application/json",
-				examples = {
-					@ExampleObject
-						(
-							value = """
-								{
-								  "code": 200,
-								  "message": "요청이 정상적으로 처리되었습니다.",
-								  "data": {
-								    "userId": 1,
-								    "coupons": [
-								      {
-								        "couponId": 1,
-								        "coupontTitle": "10% 할인 쿠폰",
-								        "discountType": "RATE",
-								        "discountValue": 10,
-								        "startDate": "2025-08-01",
-								        "endDate": "2025-08-31"
-								      },
-								      {
-								        "couponId": 2,
-								        "coupontTitle": "10,000원 할인 쿠폰",
-								        "discountType": "AMOUNT",
-								        "discountValue": 10000,
-								        "startDate": "2025-08-01",
-								        "endDate": "2025-08-31"
-								      }
-								    ]
-								  }
-								}
-								"""
-						)
-				}
-			)
-		)
-	})
-	ApiResponse<CouponReadAllResponse> getCoupons(
-		@Parameter(
-			description = "조회할 사용자 ID (1 이상의 정수)",
-			schema = @Schema(type = "integer", minimum = "1", example = "1")
-		)
-		@RequestParam("userId") Long userId);
-
-	@Operation(
 		summary = "선착순 쿠폰 발급",
 		description = "사용자 ID와 쿠폰 ID를 입력받아 해당 사용자에게 쿠폰을 발급합니다."
 	)
@@ -113,5 +60,5 @@ public interface CouponControllerSpec {
 			)
 		)
 	})
-	ResponseEntity<Void> issueCoupon(@RequestBody CouponIssueRequest request);
+	void issueCoupon(@RequestBody CouponIssueRequest request);
 }
