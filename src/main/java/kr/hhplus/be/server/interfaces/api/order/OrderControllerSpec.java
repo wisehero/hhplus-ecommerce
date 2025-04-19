@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.interfaces.api.order;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,6 +95,6 @@ public interface OrderControllerSpec {
 			)
 		)}
 	)
-	ResponseEntity<ApiResponse<OrderCreateResponse>> createOrder(
+	ApiResponse<OrderCreateResponse> createOrder(
 		@RequestBody OrderCreateRequest request);
 }
