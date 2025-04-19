@@ -58,5 +58,18 @@ public interface BestSellerControllerSpec {
 			)
 		)
 	)
-	ApiResponse<BestSellerReadAllResponse> getBestSellerLimitFive();
+	ApiResponse<BestSellerReadAllResponse> getBestSeller(
+		@Schema(
+			description = "조회할 일 수 (1~30일)",
+			example = "1",
+			type = "integer"
+		)
+		int days,
+		@Schema(
+			description = "조회할 상품 개수 (1~100개)",
+			example = "5",
+			type = "integer"
+		)
+		int limit
+	);
 }

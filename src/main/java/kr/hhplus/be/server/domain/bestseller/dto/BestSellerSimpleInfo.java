@@ -1,8 +1,9 @@
-package kr.hhplus.be.server.interfaces.api.bestseller.response;
+package kr.hhplus.be.server.domain.bestseller.dto;
 
 import java.math.BigDecimal;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import kr.hhplus.be.server.domain.bestseller.BestSeller;
 
 @Schema(
 	description = "베스트셀러 상품 정보",
@@ -27,4 +28,14 @@ public record BestSellerSimpleInfo(
 	@Schema(name = "가격", example = "100000")
 	BigDecimal price
 ) {
+
+	public static BestSellerSimpleInfo of(BestSeller bestSeller) {
+		return new BestSellerSimpleInfo(
+			bestSeller.getProductId(),
+			bestSeller.getProductName(),
+			bestSeller.getSalesCount(),
+			bestSeller.getStock(),
+			bestSeller.getPrice()
+		);
+	}
 }
