@@ -27,7 +27,8 @@ published_coupon 테이블은 유저에게 발급된 쿠폰 정보를 저장하�
 SELECT 1
 FROM published_coupon
 WHERE user_id = 1
-  AND coupon_id = 1 LIMIT 1;
+  AND coupon_id = 1
+LIMIT 1;
 ```
 
 ### 2. 실행 계획 분석
@@ -218,19 +219,19 @@ SELECT *
 FROM bestseller
 WHERE created_at >= NOW() - INTERVAL 1 DAY -- 일간
 ORDER BY sales_count DESC
-    LIMIT 100;
+LIMIT 100;
 
 SELECT *
 FROM bestseller
 WHERE created_at >= NOW() - INTERVAL 7 DAY
 ORDER BY sales_count DESC
-    LIMIT 100;
+LIMIT 100;
 
 SELECT *
 FROM bestseller
 WHERE created_at >= NOW() - INTERVAL 1 MONTH
 ORDER BY sales_count DESC
-    LIMIT 100;
+LIMIT 100;
 ```
 
 ### 2. 실행 계획 분석
@@ -243,9 +244,10 @@ ORDER BY sales_count DESC
 
 ```sql
 -> Limit: 100 row(s)  (cost=36578 rows=100) (actual time=354..354 rows=100 loops=1)
-    -> Sort: bestseller.sales_count DESC, limit input to 100 row(s) per chunk  (cost=36578 rows=992118) (actual time=354..354 rows=100 loops=1)
-        -> Filter: (bestseller.created_at >= <cache>((now() - interval 1 day)))  (cost=36578 rows=992118) (actual time=0.0868..352 rows=11228 loops=1)
-            -> Table scan on bestseller  (cost=36578 rows=992118) (actual time=0.0643..317 rows=1e+6 loops=1)
+    -> Sort: bestseller.sales_count
+DESC, limit input to 100 row (s) per chunk (cost=36578 rows =992118) (actual time =354..354 rows =100 loops=1)
+    -> Filter : (bestseller.created_at >= < cache >((now() - interval 1 day))) (cost=36578 rows =992118) (actual time =0.0868..352 rows =11228 loops=1)
+    -> Table scan on bestseller (cost=36578 rows =992118) (actual time =0.0643..317 rows =1e+6 loops=1)
 
 ```
 
@@ -272,14 +274,16 @@ CREATE INDEX idx_sales_count_created_at ON bestseller (sales_count, created_at);
 ```sql
 -- 일간 조회
 -> Limit: 100 row(s)  (cost=12407 rows=100) (actual time=92..92 rows=100 loops=1)
-    -> Sort: bestseller.sales_count DESC, limit input to 100 row(s) per chunk  (cost=12407 rows=21498) (actual time=92..92 rows=100 loops=1)
-        -> Index range scan on bestseller using idx_created_at_sales_count over ('2025-04-16 16:44:08' <= created_at), with index condition: (bestseller.created_at >= <cache>((now() - interval 1 day)))  (cost=12407 rows=21498) (actual time=0.0384..90.1 rows=11228 loops=1)
+    -> Sort: bestseller.sales_count
+DESC, limit input to 100 row (s) per chunk (cost=12407 rows =21498) (actual time =92..92 rows =100 loops=1)
+    -> Index range scan on bestseller using idx_created_at_sales_count over ('2025-04-16 16:44:08' <= created_at), with index condition : (bestseller.created_at >= < cache >((now() - interval 1 day))) (cost=12407 rows =21498) (actual time =0.0384..90.1 rows =11228 loops=1)
 
 -- 월간 조회
--> Limit: 100 row(s)  (cost=103520 rows=100) (actual time=463..463 rows=100 loops=1)
-    -> Sort: bestseller.sales_count DESC, limit input to 100 row(s) per chunk  (cost=103520 rows=992118) (actual time=463..463 rows=100 loops=1)
-        -> Filter: (bestseller.created_at >= <cache>((now() - interval 1 month)))  (cost=103520 rows=992118) (actual time=0.141..423 rows=345396 loops=1)
-            -> Table scan on bestseller  (cost=103520 rows=992118) (actual time=0.134..384 rows=1e+6 loops=1)
+    -> Limit : 100 row (s) (cost=103520 rows =100) (actual time =463..463 rows =100 loops=1)
+    -> Sort: bestseller.sales_count
+DESC, limit input to 100 row (s) per chunk (cost=103520 rows =992118) (actual time =463..463 rows =100 loops=1)
+    -> Filter : (bestseller.created_at >= < cache >((now() - interval 1 month))) (cost=103520 rows =992118) (actual time =0.141..423 rows =345396 loops=1)
+    -> Table scan on bestseller (cost=103520 rows =992118) (actual time =0.134..384 rows =1e+6 loops=1)
 ```
 
 - 일간 조회에서는 준수한 성능을 보여줍니다.
@@ -327,7 +331,7 @@ CREATE INDEX idx_sales_count_created_at ON bestseller (sales_count, created_at);
 |------|------------------------------|--------------------|--------------------------------------------------|-------------------------------------------------------------|--------------------------------------------|
 | ①    | 사용자 쿠폰 발급 여부 확인 (선착순 쿠폰 API) | `published_coupon` | 1000만 건 풀스캔 + `LIMIT 1`이 무의미 (조건 만족 못하면 전건 탐색됨)  | `idx_user_coupon (user_id, coupon_id)`                      | 1.8초 → 0.012ms (약 150,000배 개선), 커버링 인덱스 가능 |
 | ②    | 사용자 쿠폰 상세 조회                 | `published_coupon` | user_id만 조건이면 인덱스 일부만 사용 → 성능 저하 위험              | 동일하게 `idx_user_coupon`                                      | 전체 정보 조회 시에도 빠른 인덱스 탐색 및 커버링 가능            |
-| ③    | 최근 1시간 결제 완료 주문 조회 (정각 배치용)  | `orders`           | 1000만 건 테이블에서 `PAID` + `ordered_at` 필터링 시 풀스캔 발생 | `idx_status_created (order_status, ordered_at)`             | Index Range Scan + 정렬 제거 → 2.6초 → 49ms 수준  |
+| ③    | 최근 1시간 결제 완료 주문 조회 (정각 배치용)  | `orders`           | 1000만 건 테이블에서 `PAID` + `ordered_at` 필터링 시 풀스캔 발생 | `idx_order_status_ordered_at (order_status, ordered_at)`    | Index Range Scan + 정렬 제거 → 2.6초 → 49ms 수준  |
 | ④    | 인기 상품 조회 (일간/주간/월간)          | `bestseller`       | created_at만 조건이면 정렬 위해 파일 소트 발생, 월간 이상에서 풀스캔 발생  | `idx_sales_count_created_at (sales_count DESC, created_at)` | 정렬+필터링 모두 인덱스로 해결, 월간 조회도 수 ms로 가능         |
 | ⑤    | 주문 상세 상품 조회 (1:N 관계)         | `order_product`    | 특정 주문(order_id) 하위 상품 전체 조회 시 테이블 전건 조회될 위험      | `idx_order_id`                                              | 주문 상세 페이지 로딩 속도 향상                         |
 | ⑥    | 상품별 주문/판매량 조회                | `order_product`    | product_id로 필터링 시 선형 탐색 발생 가능                    | `idx_product_id`                                            | 상품별 통계 분석 속도 개선, 추천 알고리즘 등에 유용             |
