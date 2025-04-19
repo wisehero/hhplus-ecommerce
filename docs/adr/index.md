@@ -158,14 +158,14 @@ WHERE order_status = 'PAID'
 이 문제를 해결하기 위해 아래와 같은 인덱스를 추가할 것입니다.
 
 ```sql
-CREATE INDEX idx_created_status ON orders (ordered_at, order_status);
+CREATE INDEX idx_ordered_at_status ON orders (ordered_at, order_status);
 
 CREATE INDEX idx_order_status_ordered_at ON orders (order_status, ordered_at);
 ```
 
 두 인덱스 모두 테스트를 해본 결과, 두 인덱스를 각각 적용해서 얻은 실행 계획 분석 결과는 아래와 같습니다.
 
-**CASE 1 : idx_created_status**
+**CASE 1 : idx_ordered_at_status**
 
 ```sql
 -> Index range scan on orders using idx_created_status over ('2025-04-17 11:00:00' <= ordered_at <= '2025-04-17 12:00:00' AND 'PAID' <= order_status),
@@ -173,7 +173,7 @@ with index condition: ((orders.order_status = 'PAID') and (orders.ordered_at >= 
 (cost=87554 rows=82162) (actual time=10.3..54 rows=24858 loops=1)
 ```
 
-**CASE 2 : idx_status_created**
+**CASE 2 : idx_order_status_ordered_at**
 
 ```sql
 -> Index range scan on orders using idx_status_created over (order_status = 'PAID' AND '2025-04-17 11:00:00' <= ordered_at < '2025-04-17 12:00:00'), 
