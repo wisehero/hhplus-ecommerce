@@ -26,7 +26,7 @@ public class ProductController implements ProductControllerSpec {
 		@RequestParam(required = false) String name,
 		@RequestParam(required = false) BigDecimal minPrice,
 		@RequestParam(required = false) BigDecimal maxPrice) {
-		List<ProductSimpleInfo> productSimpleInfos = productService.getAllProducts()
+		List<ProductSimpleInfo> productSimpleInfos = productService.getProductsByCondition()
 			.stream()
 			.map(ProductSimpleInfo::of)
 			.toList();
