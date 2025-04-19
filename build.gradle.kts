@@ -38,8 +38,15 @@ dependencies {
     // Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
+    // Lombok
     implementation("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+
+    // QueryDSL
+    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
+    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
     // DB
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -52,6 +59,20 @@ dependencies {
     testImplementation("org.testcontainers:mysql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+val querydslDir = "$buildDir/generated/querydsl"
+
+sourceSets["main"].java.srcDirs(
+    "src/main/java", // 기본 소스 디렉토리
+    "build/generated/sources/annotationProcessor/java/main" // Q 클래스 생성 위치
+)
+
+tasks.named("clean") {
+    doLast {
+        file(querydslDir).deleteRecursively()
+    }
+}
+
 
 tasks.withType<Test> {
     useJUnitPlatform()
