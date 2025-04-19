@@ -44,7 +44,7 @@ WHERE user_id = 1
 - 운이 좋게도 조건에 맞는 결과를 빠르게 찾아 LIMIT 1 조건으로 인해 스캔이 조기 종료되었습니다.
 - 실행 시간: 약 0.549ms
 
-2-2. CASE 2: 결과가 존재하지 않는 경우
+**2-2. CASE 2: 결과가 존재하지 않는 경우**
 
 ```sql
 -> Limit: 1 row(s)  (cost=996832 rows=1) (actual time=1882..1882 rows=0 loops=1)
