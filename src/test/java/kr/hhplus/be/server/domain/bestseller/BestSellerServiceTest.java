@@ -30,6 +30,7 @@ class BestSellerServiceTest {
 	@DisplayName("입력한 기간(days)와 제한(limit)으로 베스트셀러를 조회한다.")
 	void getTopBestSellersWithDaysAndLimit() {
 		// given
+		LocalDateTime fixedNow = LocalDateTime.of(2023, 10, 1, 0, 0);
 		int days = 3;
 		int limit = 5;
 
@@ -42,11 +43,11 @@ class BestSellerServiceTest {
 				.salesCount(50L)
 				.build()
 		);
-		when(bestSellerRepository.findTopBySalesCountSince(any(LocalDate.class), eq(limit)))
+		when(bestSellerRepository.findTopBySalesCountSince(any(LocalDateTime.class), eq(limit)))
 			.thenReturn(mockResult);
 
 		// when
-		List<BestSeller> result = bestSellerService.getTopBestSellers(days, limit);
+		List<BestSeller> result = bestSellerService.getTopBestSellers(fixedNow, days, limit);
 
 		// then
 		assertAll(
@@ -54,7 +55,7 @@ class BestSellerServiceTest {
 			() -> assertThat(result.get(0).getProductName()).isEqualTo("상품 A")
 		);
 
-		verify(bestSellerRepository).findTopBySalesCountSince(any(LocalDate.class), eq(limit));
+		verify(bestSellerRepository).findTopBySalesCountSince(any(LocalDateTime.class), eq(limit));
 
 	}
 }

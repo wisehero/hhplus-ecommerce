@@ -2,6 +2,7 @@ package kr.hhplus.be.server.domain.order;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,8 @@ public class Order extends BaseTimeEntity {
 
 	private BigDecimal discountedPrice;
 
+	private LocalDateTime orderedAt;
+
 	private Order(Long userId, Long publishedCouponId, List<OrderProduct> orderProducts, OrderStatus orderStatus,
 		BigDecimal totalPrice, BigDecimal discountedPrice) {
 		this.userId = userId;
@@ -56,6 +59,7 @@ public class Order extends BaseTimeEntity {
 		this.orderStatus = orderStatus;
 		this.totalPrice = totalPrice;
 		this.discountedPrice = discountedPrice;
+		this.orderedAt = LocalDateTime.now();
 	}
 
 	public static Order create(User user) {

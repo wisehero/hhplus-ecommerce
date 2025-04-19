@@ -13,4 +13,6 @@ public interface OrderRepository {
 
 	List<OrderProduct> findOrderProductsByOrderId(Long orderId);
 
+	List<Order> findPaidOrdersWithinOneHour(LocalDateTime now);
+
 }

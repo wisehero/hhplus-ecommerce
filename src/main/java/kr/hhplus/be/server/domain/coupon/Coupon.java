@@ -120,8 +120,7 @@ public class Coupon extends BaseTimeEntity {
 			this.discountType,
 			this.discountValue,
 			this.validFrom,
-			this.validTo,
-			this.id
+			this.validTo
 		);
 	}
 }
