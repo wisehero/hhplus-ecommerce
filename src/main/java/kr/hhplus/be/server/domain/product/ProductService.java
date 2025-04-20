@@ -20,15 +20,23 @@ public class ProductService {
 		return productRepository.findById(productId);
 	}
 
-	public List<Product> getAllProducts() {
-		return productRepository.findAll();
+	public Product getProductByIdPessimistic(Long productId) {
+		if (productId == null) {
+			throw new IllegalArgumentException("상품 ID가 null입니다.");
+		}
+		return productRepository.findByIdPessimistic(productId);
+	}
+
+	public List<Product> getProductsByCondition() {
+		return productRepository.findProductsByCondition();
 	}
 
 	@Transactional
-	public void decreaseStock(Product product, Long quantity) {
+	public Product decreaseStock(Long productId, Long quantity) {
+		Product product = productRepository.findByIdPessimistic(productId);
 		product.decreaseStock(quantity);
 
-		productRepository.save(product);
+		return productRepository.save(product);
 	}
 
 	@Transactional

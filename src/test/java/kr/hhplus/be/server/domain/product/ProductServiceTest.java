@@ -59,9 +59,10 @@ class ProductServiceTest {
 		Product product = Instancio.of(Product.class)
 			.set(Select.field(Product::getStock), 10L)
 			.create();
+		when(productRepository.findByIdPessimistic(product.getId())).thenReturn(product);
 
 		// when
-		productService.decreaseStock(product, 3L);
+		productService.decreaseStock(product.getId(), 3L);
 
 		// then
 		assertThat(product.getStock()).isEqualTo(7L);
@@ -75,9 +76,10 @@ class ProductServiceTest {
 		Product product = Instancio.of(Product.class)
 			.set(Select.field(Product::getStock), 10L)
 			.create();
+		when(productRepository.findByIdPessimistic(product.getId())).thenReturn(product);
 
 		// when & then
-		assertThatThrownBy(() -> productService.decreaseStock(product, null))
+		assertThatThrownBy(() -> productService.decreaseStock(product.getId(), null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("수량이 null이거나 0 이하입니다.");
 		verify(productRepository, never()).save(any());
@@ -90,13 +92,13 @@ class ProductServiceTest {
 		Product product = Instancio.of(Product.class)
 			.set(Select.field(Product::getStock), 5L)
 			.create();
+		when(productRepository.findByIdPessimistic(product.getId())).thenReturn(product);
 
 		// when & then
-		assertThatThrownBy(() -> productService.decreaseStock(product, 10L))
+		assertThatThrownBy(() -> productService.decreaseStock(product.getId(), 10L))
 			.isInstanceOf(ProductOutOfStockException.class);
 		verify(productRepository, never()).save(any());
 	}
-
 
 	@Test
 	@DisplayName("재고 복구 성공 시 재고가 올바르게 증가하고 저장된다.")

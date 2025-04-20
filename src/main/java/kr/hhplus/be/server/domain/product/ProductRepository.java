@@ -4,12 +4,11 @@ import java.util.List;
 
 public interface ProductRepository {
 
-	List<Product> findAll();
-
-	List<Product> findAllByIds(List<Long> productIds);
+	List<Product> findProductsByCondition();
 
 	Product findById(Long productId);
 
 	Product save(Product product);
 
+	Product findByIdPessimistic(Long productId);
 }

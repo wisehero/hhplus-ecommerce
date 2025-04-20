@@ -15,8 +15,9 @@ public class ProductRepositoryImpl implements ProductRepository {
 
 	private final ProductJpaRepository productJpaRepository;
 
-	public List<Product> findAll() {
-		return productJpaRepository.findAll();
+	@Override
+	public List<Product> findProductsByCondition() {
+		return productJpaRepository.findProductsByCondition();
 	}
 
 	@Override
@@ -31,7 +32,9 @@ public class ProductRepositoryImpl implements ProductRepository {
 	}
 
 	@Override
-	public List<Product> findAllByIds(List<Long> productIds) {
-		return productJpaRepository.findAllByIdIn(productIds);
+	public Product findByIdPessimistic(Long productId) {
+		return productJpaRepository.findByIdPessimistic(productId)
+			.orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. 입력한 상품 ID: " + productId));
 	}
+
 }

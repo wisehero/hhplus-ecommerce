@@ -69,7 +69,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 			});
 
 		// when
-		List<Product> products = productService.getAllProducts();
+		List<Product> products = productService.getProductsByCondition();
 
 		// then
 		assertThat(products)
@@ -96,7 +96,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when
-		productService.decreaseStock(product, 3L);
+		productService.decreaseStock(savedId, 3L);
 
 		// then
 		Product updated = productRepository.findById(savedId);
@@ -117,14 +117,13 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when & then
-		assertThatThrownBy(() -> productService.decreaseStock(product, 10L)) // 재고 초과 차감
+		assertThatThrownBy(() -> productService.decreaseStock(savedId, 10L)) // 재고 초과 차감
 			.isInstanceOf(ProductOutOfStockException.class);
 
 		Product updated = productRepository.findById(savedId);
 		assertThat(updated.getStock()).isEqualTo(5L); // 재고는 그대로여야 한다
 	}
 
-	// TODO 상품 재고 원복(증가) 테스트
 	@Test
 	@DisplayName("상품 재고는 입력 수량만큼 정상적으로 증가한다.")
 	void shouldIncreaseStockWhenValidQuantityIsGiven() {

@@ -51,8 +51,7 @@ public class ProductServiceConcurrencyTest extends IntgerationTestSupport {
 			} catch (InterruptedException ignored) {
 			}
 			try {
-				Product p = productRepository.findById(productId);
-				productService.decreaseStock(p, 1L);
+				productService.decreaseStock(productId, 1L);
 			} catch (Exception ignored) {
 			}
 		};
@@ -67,8 +66,8 @@ public class ProductServiceConcurrencyTest extends IntgerationTestSupport {
 		exec.awaitTermination(1, TimeUnit.SECONDS);
 
 		// then: 정상이면 stock == 0 이지만, 락이 없으면 대부분 19로 남음 → 실패 재현
-		Product finalP = productRepository.findById(productId);
-		assertThat(finalP.getStock())
+		Product result = productRepository.findById(productId);
+		assertThat(result.getStock())
 			.isEqualTo(0);
 	}
 }

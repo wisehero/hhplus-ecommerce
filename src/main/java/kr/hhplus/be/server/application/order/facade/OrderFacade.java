@@ -35,8 +35,7 @@ public class OrderFacade {
 
 		// 그리고 상품 재고를 차감하고 주문 상품을 추가해
 		command.orderLines().forEach(line -> {
-			Product product = productService.getProductById(line.productId());
-			productService.decreaseStock(product, line.quantity());
+			Product product = productService.decreaseStock(line.productId(), line.quantity());
 			order.addOrderProduct(product, line.quantity());
 		});
 
