@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import kr.hhplus.be.server.domain.bestseller.dto.BestSellerSimpleInfo;
+
 @ExtendWith(MockitoExtension.class)
 class BestSellerServiceTest {
 
@@ -47,12 +49,12 @@ class BestSellerServiceTest {
 			.thenReturn(mockResult);
 
 		// when
-		List<BestSeller> result = bestSellerService.getTopBestSellers(fixedNow, days, limit);
+		List<BestSellerSimpleInfo> result = bestSellerService.getTopBestSellers(fixedNow, days, limit);
 
 		// then
 		assertAll(
 			() -> assertThat(result).hasSize(1),
-			() -> assertThat(result.get(0).getProductName()).isEqualTo("상품 A")
+			() -> assertThat(result.get(0).productName()).isEqualTo("상품 A")
 		);
 
 		verify(bestSellerRepository).findTopBySalesCountSince(any(LocalDateTime.class), eq(limit));
