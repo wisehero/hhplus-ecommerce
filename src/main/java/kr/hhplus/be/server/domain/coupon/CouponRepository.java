@@ -6,6 +6,8 @@ public interface CouponRepository {
 
 	Coupon findById(Long couponId);
 
+	Coupon findByIdWithPessimistic(Long couponId);
+
 	PublishedCoupon savePublishedCoupon(PublishedCoupon publishedCoupon);
 
 	PublishedCoupon findPublishedCouponById(Long publishedCouponId);

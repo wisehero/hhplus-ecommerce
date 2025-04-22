@@ -38,6 +38,23 @@ public class CouponService {
 	}
 
 	@Transactional
+	public void issueCouponV2(CouponIssueCommand command) {
+
+		Coupon coupon = couponRepository.findByIdWithPessimistic(command.couponId());
+
+		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
+			throw new CouponAlreadyIssuedException();
+		}
+
+		coupon.issue();
+
+		Coupon savedCoupon = couponRepository.save(coupon);
+
+		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
+		couponRepository.savePublishedCoupon(publishedCoupon);
+	}
+
+	@Transactional
 	public void restorePublishedCoupon(Long publishedCouponId) {
 		if (publishedCouponId == null) {
 			throw new IllegalArgumentException("복원하려는 쿠폰 ID는 null일 수 없습니다.");
