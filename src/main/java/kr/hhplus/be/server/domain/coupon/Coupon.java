@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
@@ -42,6 +43,9 @@ public class Coupon extends BaseTimeEntity {
 	private LocalDate validFrom;
 
 	private LocalDate validTo;
+
+	@Version
+	private Long version;
 
 	private Coupon(
 		String couponName,

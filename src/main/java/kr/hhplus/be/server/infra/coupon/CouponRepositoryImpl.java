@@ -35,6 +35,13 @@ public class CouponRepositoryImpl implements CouponRepository {
 	}
 
 	@Override
+	public Coupon findByIdWithOptimistic(Long couponId) {
+		return couponJpaRepository.findByIdWithOptimistic(couponId).orElseThrow(
+			() -> new EntityNotFoundException("쿠폰을 찾을 수 없습니다.")
+		);
+	}
+
+	@Override
 	public PublishedCoupon savePublishedCoupon(PublishedCoupon publishedCoupon) {
 		return publishedCouponJpaRepository.save(publishedCoupon);
 	}

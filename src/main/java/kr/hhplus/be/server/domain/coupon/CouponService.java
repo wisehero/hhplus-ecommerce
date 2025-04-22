@@ -2,13 +2,19 @@ package kr.hhplus.be.server.domain.coupon;
 
 import java.time.LocalDate;
 
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CouponService {
@@ -52,6 +58,34 @@ public class CouponService {
 
 		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
 		couponRepository.savePublishedCoupon(publishedCoupon);
+	}
+
+	@Retryable(
+		value = {OptimisticLockingFailureException.class},
+		maxAttempts = 3,
+		backoff = @Backoff(delay = 200, multiplier = 2)
+	)
+	@Transactional
+	public void issueCouponV3(CouponIssueCommand command) {
+
+		Coupon coupon = couponRepository.findByIdWithOptimistic(command.couponId());
+
+		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
+			throw new CouponAlreadyIssuedException();
+		}
+
+		coupon.issue();
+
+		Coupon savedCoupon = couponRepository.save(coupon);
+
+		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
+		couponRepository.savePublishedCoupon(publishedCoupon);
+	}
+
+	@Recover
+	public void recover(OptimisticLockingFailureException e, CouponIssueCommand command) {
+		log.info("OptimisticLockingFailureException 발생, 재시도 횟수 초과: {}", e.getMessage());
+		throw e;
 	}
 
 	@Transactional
