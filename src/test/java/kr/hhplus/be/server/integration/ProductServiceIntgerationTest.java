@@ -85,7 +85,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 	// TODO 상품 재고 차감 테스트
 	@Test
 	@DisplayName("상품 재고는 주문 수량만큼 차감된다.")
-	void shouldDecreaseStockWhenProductIsOrdered() {
+	void shouldDecreaseStockWithPessimisticWhenProductIsOrdered() {
 		// given
 		Product product = Instancio.of(Product.class)
 			.ignore(Select.field(Product.class, "id"))
@@ -96,7 +96,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when
-		productService.decreaseStock(savedId, 3L);
+		productService.decreaseStockLockFree(savedId, 3L);
 
 		// then
 		Product updated = productRepository.findById(savedId);
@@ -117,7 +117,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when & then
-		assertThatThrownBy(() -> productService.decreaseStock(savedId, 10L)) // 재고 초과 차감
+		assertThatThrownBy(() -> productService.decreaseStockLockFree(savedId, 10L)) // 재고 초과 차감
 			.isInstanceOf(ProductOutOfStockException.class);
 
 		Product updated = productRepository.findById(savedId);

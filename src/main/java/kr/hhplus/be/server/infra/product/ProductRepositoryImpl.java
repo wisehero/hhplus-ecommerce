@@ -27,14 +27,18 @@ public class ProductRepositoryImpl implements ProductRepository {
 	}
 
 	@Override
-	public Product save(Product product) {
-		return productJpaRepository.save(product);
-	}
-
-	@Override
 	public Product findByIdPessimistic(Long productId) {
 		return productJpaRepository.findByIdPessimistic(productId)
 			.orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. 입력한 상품 ID: " + productId));
 	}
 
+	@Override
+	public Product save(Product product) {
+		return productJpaRepository.save(product);
+	}
+
+	@Override
+	public int decreaseStock(Long productId, Long quantity) {
+		return productJpaRepository.decreaseStock(productId, quantity);
+	}
 }

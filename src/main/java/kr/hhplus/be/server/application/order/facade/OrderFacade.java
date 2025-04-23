@@ -1,9 +1,9 @@
 package kr.hhplus.be.server.application.order.facade;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.Transient;
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
 import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
 import kr.hhplus.be.server.domain.coupon.CouponService;
@@ -26,7 +26,7 @@ public class OrderFacade {
 	private final UserService userService;
 
 	@Transactional
-	public OrderCreateResult createOrder(OrderCreateCommand command) {
+	public OrderCreateResult createOrderV1(OrderCreateCommand command) {
 
 		User findUser = userService.getUserById(command.userId());
 
@@ -35,7 +35,60 @@ public class OrderFacade {
 
 		// 그리고 상품 재고를 차감하고 주문 상품을 추가해
 		command.orderLines().forEach(line -> {
-			Product product = productService.decreaseStock(line.productId(), line.quantity());
+			Product product = productService.decreaseStockLockFree(line.productId(), line.quantity());
+			order.addOrderProduct(product, line.quantity());
+		});
+
+		// 적용할 쿠폰이 있어?
+		if (command.publishedCouponId() != null) {
+			PublishedCoupon findPublishedCoupon = couponService.getPublishedCouponById(command.publishedCouponId());
+
+			order.applyCoupon(findPublishedCoupon);
+		}
+
+		return OrderCreateResult.from(orderService.order(order));
+	}
+
+	/**
+	 * 주문 생성 파사드 (재고 차감 시 비관적 락 사용)
+	 * @param command
+	 * @return
+	 */
+	@Transactional
+	public OrderCreateResult createOrderV2(OrderCreateCommand command) {
+
+		User findUser = userService.getUserById(command.userId());
+
+		// 우선 주문 도메인 객체를 생성해
+		Order order = Order.create(findUser);
+
+		// 그리고 상품 재고를 차감하고 주문 상품을 추가해
+		command.orderLines().forEach(line -> {
+			Product product = productService.decreaseStockWithPessimistic(line.productId(), line.quantity());
+			order.addOrderProduct(product, line.quantity());
+		});
+
+		// 적용할 쿠폰이 있어?
+		if (command.publishedCouponId() != null) {
+			PublishedCoupon findPublishedCoupon = couponService.getPublishedCouponById(command.publishedCouponId());
+
+			order.applyCoupon(findPublishedCoupon);
+		}
+
+		return OrderCreateResult.from(orderService.order(order));
+	}
+
+	@Transactional
+	public OrderCreateResult createOrderV3(OrderCreateCommand command) {
+
+		User findUser = userService.getUserById(command.userId());
+
+		// 우선 주문 도메인 객체를 생성해
+		Order order = Order.create(findUser);
+
+		// 그리고 상품 재고를 차감하고 주문 상품을 추가해
+		command.orderLines().forEach(line -> {
+			Product product = productService.decreaseStockWithModifying(line.productId(), line.quantity());
 			order.addOrderProduct(product, line.quantity());
 		});
 

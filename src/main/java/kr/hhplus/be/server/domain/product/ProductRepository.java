@@ -11,4 +11,6 @@ public interface ProductRepository {
 	Product save(Product product);
 
 	Product findByIdPessimistic(Long productId);
+
+	int decreaseStock(Long productId, Long quantity);
 }
