@@ -28,6 +28,17 @@ public class PointRepositoryImpl implements PointRepository {
 	}
 
 	@Override
+	public Point findByUserIdWithOptimistic(Long userId) {
+		return pointJpaRepository.findByUserIdOptimistic(userId)
+			.orElseGet(
+				() -> {
+					Point point = Point.createZeroUserPoint(userId);
+					return pointJpaRepository.save(point);
+				}
+			);
+	}
+
+	@Override
 	public Point save(Point point) {
 		return pointJpaRepository.save(point);
 	}
