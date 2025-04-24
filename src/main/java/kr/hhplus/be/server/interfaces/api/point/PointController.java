@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import kr.hhplus.be.server.application.point.PointOrderPaymentFacade;
 import kr.hhplus.be.server.domain.point.Point;
 import kr.hhplus.be.server.domain.point.PointService;
@@ -34,7 +35,7 @@ public class PointController implements PointControllerSpec {
 	}
 
 	@PatchMapping("/charge")
-	public ApiResponse<PointOfUserReadResponse> chargeUserPoint(@RequestBody PointChargeRequest request) {
+	public ApiResponse<PointOfUserReadResponse> chargeUserPoint(@Valid @RequestBody PointChargeRequest request) {
 		PointChargeCommand command = request.toCommand();
 		Point userPoint = pointService.chargeUserPoint(command);
 		return ApiResponse.ok(new PointOfUserReadResponse(userPoint));
@@ -42,7 +43,7 @@ public class PointController implements PointControllerSpec {
 
 	@PatchMapping("/use")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void useUserPoint(@RequestBody PointUsageRequest request) {
+	public void useUserPoint(@Valid @RequestBody PointUsageRequest request) {
 		pointOrderPaymentFacade.pointPayment(request.toCommand());
 	}
 }
