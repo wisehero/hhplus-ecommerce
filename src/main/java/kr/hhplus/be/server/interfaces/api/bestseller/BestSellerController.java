@@ -21,12 +21,14 @@ public class BestSellerController implements BestSellerControllerSpec {
 
 	private final BestSellerService bestSellerService;
 
-	@GetMapping("/best")
+	@GetMapping()
 	public ApiResponse<BestSellerReadAllResponse> getBestSeller(
-		@RequestParam("limit") int days,
-		@RequestParam("offset") int limit
+		@RequestParam(value = "days", defaultValue = "1") int days,
+		@RequestParam(value = "offset", defaultValue = "100") int limit
 	) {
 
+		System.out.println("days = " + days);
+		System.out.println("limit = " + limit);
 		List<BestSellerSimpleInfo> topBestSellers = bestSellerService.getTopBestSellers(LocalDateTime.now(), days,
 			limit);
 
