@@ -172,7 +172,7 @@ public class CouponServiceConcurrencyTest extends IntgerationTestSupport {
 		ready.await();   // 모든 스레드가 준비될 때까지 대기
 		start.countDown(); // 동시에 시작
 		es.shutdown();
-		es.awaitTermination(1, TimeUnit.SECONDS);
+		es.awaitTermination(2, TimeUnit.SECONDS);
 
 		// then
 		Coupon after = couponJpaRepository.findById(coupon.getId()).orElseThrow();

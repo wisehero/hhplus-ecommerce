@@ -49,6 +49,7 @@ class PointOrderPaymentFacadeTest {
 		Order order = Instancio.of(Order.class)
 			.set(Select.field(Order.class, "id"), orderId)
 			.set(Select.field(Order.class, "totalPrice"), orderTotalPrice)
+			.set(Select.field(Order.class, "discountedPrice"), BigDecimal.ZERO)
 			.create();
 
 		when(orderService.getOrderById(orderId)).thenReturn(order);

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
@@ -68,8 +69,10 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 				productRepository.save(product);
 			});
 
+		ProductSearchCondition condition = new ProductSearchCondition(null, null, null);
+
 		// when
-		List<Product> products = productService.getProductsByCondition();
+		List<Product> products = productService.getProductsByCondition(condition);
 
 		// then
 		assertThat(products)

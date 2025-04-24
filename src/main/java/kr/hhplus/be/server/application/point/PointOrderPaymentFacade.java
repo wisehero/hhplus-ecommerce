@@ -1,5 +1,8 @@
 package kr.hhplus.be.server.application.point;
 
+import java.math.BigDecimal;
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +27,12 @@ public class PointOrderPaymentFacade {
 		// 결제할 주문 건 가져오기
 		Order order = orderService.getOrderById(command.orderId());
 
+		System.out.println(order.getTotalPrice());
+		System.out.println(order.getDiscountedPrice());
+
 		// 결제
-		PointUseCommand pointUseCommand = PointUseCommand.of(command.userId(), order.getTotalPrice());
+		PointUseCommand pointUseCommand = PointUseCommand.of(command.userId(),
+			order.getDiscountedPrice().compareTo(BigDecimal.ZERO) == 0 ? order.getTotalPrice() : order.getDiscountedPrice());
 		pointService.useUserPoint(pointUseCommand);
 
 		// 주문 상태 PENDING -> PAID

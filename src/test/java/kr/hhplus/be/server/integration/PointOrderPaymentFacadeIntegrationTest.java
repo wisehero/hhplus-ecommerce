@@ -71,9 +71,9 @@ public class PointOrderPaymentFacadeIntegrationTest extends IntgerationTestSuppo
 		ReflectionTestUtils.setField(order, "createdAt", LocalDateTime.now());
 		ReflectionTestUtils.setField(order, "updatedAt", LocalDateTime.now());
 
-		orderRepository.save(order);
+		Order savedOrder = orderRepository.save(order);
 
-		PointOrderPaymentCommand command = new PointOrderPaymentCommand(user.getId(), order.getId());
+		PointOrderPaymentCommand command = new PointOrderPaymentCommand(savedOrder.getId(), user.getId());
 
 		// when
 		pointOrderPaymentFacade.pointPayment(command);
