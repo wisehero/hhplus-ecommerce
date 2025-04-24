@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.hhplus.be.server.interfaces.api.ApiResponse;
 import kr.hhplus.be.server.interfaces.api.bestseller.response.BestSellerReadAllResponse;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import kr.hhplus.be.server.interfaces.api.product.response.ProductReadAllResponse;
 
 @Tag(
@@ -60,7 +61,5 @@ public interface ProductControllerSpec {
 			)
 		)
 	)
-	ApiResponse<ProductReadAllResponse> getProducts(@RequestParam(required = false) String name,
-		@RequestParam(required = false) BigDecimal minPrice,
-		@RequestParam(required = false) BigDecimal maxPrice);
+	ApiResponse<ProductReadAllResponse> getProducts(ProductSearchCondition condition);
 }
