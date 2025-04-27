@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import kr.hhplus.be.server.domain.product.ProductService;
 import kr.hhplus.be.server.interfaces.api.ApiResponse;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import kr.hhplus.be.server.interfaces.api.product.response.ProductReadAllResponse;
 import kr.hhplus.be.server.interfaces.api.product.response.ProductSimpleInfo;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +23,9 @@ public class ProductController implements ProductControllerSpec {
 	private final ProductService productService;
 
 	@GetMapping
-	public ApiResponse<ProductReadAllResponse> getProducts(
-		@RequestParam(required = false) String name,
-		@RequestParam(required = false) BigDecimal minPrice,
-		@RequestParam(required = false) BigDecimal maxPrice) {
-		List<ProductSimpleInfo> productSimpleInfos = productService.getProductsByCondition()
+	public ApiResponse<ProductReadAllResponse> getProducts(ProductSearchCondition condition) {
+		System.out.println(condition);
+		List<ProductSimpleInfo> productSimpleInfos = productService.getProductsByCondition(condition)
 			.stream()
 			.map(ProductSimpleInfo::of)
 			.toList();

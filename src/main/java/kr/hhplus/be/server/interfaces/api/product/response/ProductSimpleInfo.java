@@ -3,6 +3,7 @@ package kr.hhplus.be.server.interfaces.api.product.response;
 import java.math.BigDecimal;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import kr.hhplus.be.server.domain.product.Product;
 
 @Schema(name = "상품 간단 정보")
 public record ProductSimpleInfo(
@@ -15,4 +16,13 @@ public record ProductSimpleInfo(
 	@Schema(name = "재고", example = "1000")
 	Long stock
 ) {
+
+	public static ProductSimpleInfo of(Product product) {
+		return new ProductSimpleInfo(
+			product.getId(),
+			product.getProductName(),
+			product.getPrice(),
+			product.getStock()
+		);
+	}
 }

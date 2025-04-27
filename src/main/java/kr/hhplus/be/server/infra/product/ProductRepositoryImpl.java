@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import jakarta.persistence.EntityNotFoundException;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -16,8 +17,8 @@ public class ProductRepositoryImpl implements ProductRepository {
 	private final ProductJpaRepository productJpaRepository;
 
 	@Override
-	public List<Product> findProductsByCondition() {
-		return productJpaRepository.findProductsByCondition();
+	public List<Product> findProductsByCondition(ProductSearchCondition condition) {
+		return productJpaRepository.findProductsByCondition(condition);
 	}
 
 	@Override

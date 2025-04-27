@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
 import kr.hhplus.be.server.application.order.facade.OrderFacade;
 import kr.hhplus.be.server.interfaces.api.ApiResponse;
@@ -23,10 +24,9 @@ public class OrderController implements OrderControllerSpec {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public ApiResponse<OrderCreateResponse> createOrder(@RequestBody OrderCreateRequest request) {
-		OrderCreateResult result = orderFacade.createOrder(request.toOrderCreateCommand());
+	public ApiResponse<OrderCreateResponse> createOrder(@Valid @RequestBody OrderCreateRequest request) {
+		OrderCreateResult result = orderFacade.createOrderV2(request.toOrderCreateCommand());
 
 		return ApiResponse.created(new OrderCreateResponse(result.orderId()));
 	}
-
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,8 +22,8 @@ public class ProductService {
 		return productRepository.findById(productId);
 	}
 
-	public List<Product> getProductsByCondition() {
-		return productRepository.findProductsByCondition();
+	public List<Product> getProductsByCondition(ProductSearchCondition condition) {
+		return productRepository.findProductsByCondition(condition);
 	}
 
 	@Transactional
