@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import jakarta.persistence.EntityNotFoundException;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -15,8 +16,9 @@ public class ProductRepositoryImpl implements ProductRepository {
 
 	private final ProductJpaRepository productJpaRepository;
 
-	public List<Product> findAll() {
-		return productJpaRepository.findAll();
+	@Override
+	public List<Product> findProductsByCondition(ProductSearchCondition condition) {
+		return productJpaRepository.findProductsByCondition(condition);
 	}
 
 	@Override
@@ -26,12 +28,18 @@ public class ProductRepositoryImpl implements ProductRepository {
 	}
 
 	@Override
+	public Product findByIdPessimistic(Long productId) {
+		return productJpaRepository.findByIdPessimistic(productId)
+			.orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. 입력한 상품 ID: " + productId));
+	}
+
+	@Override
 	public Product save(Product product) {
 		return productJpaRepository.save(product);
 	}
 
 	@Override
-	public List<Product> findAllByIds(List<Long> productIds) {
-		return productJpaRepository.findAllByIdIn(productIds);
+	public int decreaseStock(Long productId, Long quantity) {
+		return productJpaRepository.decreaseStock(productId, quantity);
 	}
 }

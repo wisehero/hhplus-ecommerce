@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,9 @@ public class Point {
 
 	@Embedded
 	private Balance balance;
+
+	@Version
+	private Long version;
 
 	@Builder
 	private Point(Long userId, Balance balance) {

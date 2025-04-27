@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
@@ -68,8 +69,10 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 				productRepository.save(product);
 			});
 
+		ProductSearchCondition condition = new ProductSearchCondition(null, null, null);
+
 		// when
-		List<Product> products = productService.getAllProducts();
+		List<Product> products = productService.getProductsByCondition(condition);
 
 		// then
 		assertThat(products)
@@ -85,7 +88,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 	// TODO 상품 재고 차감 테스트
 	@Test
 	@DisplayName("상품 재고는 주문 수량만큼 차감된다.")
-	void shouldDecreaseStockWhenProductIsOrdered() {
+	void shouldDecreaseStockWithPessimisticWhenProductIsOrdered() {
 		// given
 		Product product = Instancio.of(Product.class)
 			.ignore(Select.field(Product.class, "id"))
@@ -96,7 +99,7 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when
-		productService.decreaseStock(product, 3L);
+		productService.decreaseStockLockFree(savedId, 3L);
 
 		// then
 		Product updated = productRepository.findById(savedId);
@@ -117,14 +120,13 @@ public class ProductServiceIntgerationTest extends IntgerationTestSupport {
 		Long savedId = product.getId();
 
 		// when & then
-		assertThatThrownBy(() -> productService.decreaseStock(product, 10L)) // 재고 초과 차감
+		assertThatThrownBy(() -> productService.decreaseStockLockFree(savedId, 10L)) // 재고 초과 차감
 			.isInstanceOf(ProductOutOfStockException.class);
 
 		Product updated = productRepository.findById(savedId);
 		assertThat(updated.getStock()).isEqualTo(5L); // 재고는 그대로여야 한다
 	}
 
-	// TODO 상품 재고 원복(증가) 테스트
 	@Test
 	@DisplayName("상품 재고는 입력 수량만큼 정상적으로 증가한다.")
 	void shouldIncreaseStockWhenValidQuantityIsGiven() {

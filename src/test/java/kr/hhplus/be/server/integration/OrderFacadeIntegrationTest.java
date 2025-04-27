@@ -81,7 +81,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 		);
 
 		// when
-		OrderCreateResult result = orderFacade.createOrder(command);
+		OrderCreateResult result = orderFacade.createOrderV1(command);
 
 		// then
 		Order order = orderRepository.findOrderById(result.orderId());
@@ -117,7 +117,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 		);
 
 		// when
-		OrderCreateResult result = orderFacade.createOrder(command);
+		OrderCreateResult result = orderFacade.createOrderV1(command);
 
 		// then
 		Order order = orderRepository.findOrderById(result.orderId());
@@ -133,7 +133,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 	}
 
 	@Test
-	@DisplayName("상품 재고가 부족하면 주문 생성에 실패한다")
+	@DisplayName("사용자가 상품 재고가 없는데 주문을 하면 주문에 실패한다.")
 	void shouldFailWhenStockIsInsufficient() {
 		// given
 		User user = userRepository.save(
@@ -148,7 +148,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 			.create();
 		product = productRepository.save(product);
 
-		OrderLine orderLine = new OrderLine(product.getId(), 5L); // 5개 요청
+		OrderLine orderLine = new OrderLine(product.getId(), 2L); // 2개 요청
 
 		OrderCreateCommand command = new OrderCreateCommand(
 			user.getId(),
@@ -157,7 +157,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 		);
 
 		// when & then
-		assertThatThrownBy(() -> orderFacade.createOrder(command))
+		assertThatThrownBy(() -> orderFacade.createOrderV1(command))
 			.isInstanceOf(ProductOutOfStockException.class);
 	}
 }

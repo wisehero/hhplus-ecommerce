@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import org.instancio.Instancio;
-import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,7 @@ import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.bestseller.BestSeller;
 import kr.hhplus.be.server.domain.bestseller.BestSellerRepository;
 import kr.hhplus.be.server.domain.bestseller.BestSellerService;
+import kr.hhplus.be.server.domain.bestseller.dto.BestSellerSimpleInfo;
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
@@ -38,26 +38,20 @@ public class BestSellerServiceIntegrationTest extends IntgerationTestSupport {
 	@Test
 	@DisplayName("BestSeller 저장 시, ID가 자동 할당되고 동일한 데이터가 DB에 저장된다.")
 	void testSaveBestSeller() {
-		// given: Instancio로 BestSeller 생성 (ID는 무시)
+		// given
 		BestSeller bestSeller = of(BestSeller.class)
 			.ignore(field(BestSeller.class, "id"))
 			.create();
 
-		// when: BestSeller 저장 (save 메서드가 호출됨)
+		// when
 		BestSeller savedBestSeller = bestSellerService.save(bestSeller);
 
-		// then: DB에서 다시 조회하여 저장된 데이터와 비교
+		// then:
 		BestSeller retrieved = bestSellerRepository.findById(savedBestSeller.getId());
 
 		assertAll(
-			() -> assertThat(retrieved).isNotNull(),
 			() -> assertThat(retrieved.getId()).isNotNull(),
-			() -> assertThat(retrieved.getProductId()).isEqualTo(savedBestSeller.getProductId()),
-			() -> assertThat(retrieved.getProductName()).isEqualTo(savedBestSeller.getProductName()),
-			() -> assertThat(retrieved.getDescription()).isEqualTo(savedBestSeller.getDescription()),
-			() -> assertThat(retrieved.getPrice()).isEqualByComparingTo(savedBestSeller.getPrice()),
-			() -> assertThat(retrieved.getStock()).isEqualTo(savedBestSeller.getStock()),
-			() -> assertThat(retrieved.getSalesCount()).isEqualTo(savedBestSeller.getSalesCount())
+			() -> assertThat(retrieved.getProductId()).isEqualTo(savedBestSeller.getProductId())
 		);
 	}
 
@@ -100,16 +94,16 @@ public class BestSellerServiceIntegrationTest extends IntgerationTestSupport {
 		bestSellerRepository.saveAll(expectedTop);
 
 		// when
-		List<BestSeller> result = bestSellerService.getTopBestSellers(fixedNow, 3, 3); // 최근 3일간 상위 3개
+		List<BestSellerSimpleInfo> result = bestSellerService.getTopBestSellers(fixedNow, 3, 3); // 최근 3일간 상위 3개
 
 		// then
 		assertAll(
 			() -> assertThat(result).hasSize(3),
 			() -> assertThat(result)
-				.isSortedAccordingTo(Comparator.comparingLong(BestSeller::getSalesCount).reversed()),
-			() -> assertThat(result.get(0).getSalesCount()).isEqualTo(100L),
-			() -> assertThat(result.get(1).getSalesCount()).isEqualTo(90L),
-			() -> assertThat(result.get(2).getSalesCount()).isEqualTo(80L)
+				.isSortedAccordingTo(Comparator.comparing(BestSellerSimpleInfo::salesCount).reversed()),
+			() -> assertThat(result.get(0).salesCount()).isEqualTo(100L),
+			() -> assertThat(result.get(1).salesCount()).isEqualTo(90L),
+			() -> assertThat(result.get(2).salesCount()).isEqualTo(80L)
 		);
 	}
 

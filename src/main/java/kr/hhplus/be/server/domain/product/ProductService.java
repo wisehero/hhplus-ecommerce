@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
+import kr.hhplus.be.server.interfaces.api.product.request.ProductSearchCondition;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,15 +22,37 @@ public class ProductService {
 		return productRepository.findById(productId);
 	}
 
-	public List<Product> getAllProducts() {
-		return productRepository.findAll();
+	public List<Product> getProductsByCondition(ProductSearchCondition condition) {
+		return productRepository.findProductsByCondition(condition);
 	}
 
 	@Transactional
-	public void decreaseStock(Product product, Long quantity) {
+	public Product decreaseStockLockFree(Long productId, Long quantity) {
+		Product product = productRepository.findById(productId);
 		product.decreaseStock(quantity);
 
-		productRepository.save(product);
+		return productRepository.save(product);
+	}
+
+	@Transactional
+	public Product decreaseStockWithPessimistic(Long productId, Long quantity) {
+		Product product = productRepository.findByIdPessimistic(productId);
+		product.decreaseStock(quantity);
+
+		return productRepository.save(product);
+	}
+
+	@Transactional
+	public Product decreaseStockWithModifying(Long productId, Long quantity) {
+		int updatedRow = productRepository.decreaseStock(productId, quantity);
+
+		if (updatedRow == 0) {
+			Product product = productRepository.findById(productId);
+			System.out.println("야 한번 실패했따.");
+			throw new ProductOutOfStockException(product.getStock(), quantity);
+		}
+
+		return productRepository.findById(productId);
 	}
 
 	@Transactional

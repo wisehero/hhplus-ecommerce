@@ -1,55 +1,27 @@
 package kr.hhplus.be.server.interfaces.api.coupon;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import kr.hhplus.be.server.interfaces.api.ApiResponse;
+import jakarta.validation.Valid;
+import kr.hhplus.be.server.domain.coupon.CouponService;
 import kr.hhplus.be.server.interfaces.api.coupon.request.CouponIssueRequest;
-import kr.hhplus.be.server.interfaces.api.coupon.response.CouponInfo;
-import kr.hhplus.be.server.interfaces.api.coupon.response.CouponReadAllResponse;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/coupons")
+@RequiredArgsConstructor
 public class CouponController implements CouponControllerSpec {
 
-	@GetMapping
-	public ApiResponse<CouponReadAllResponse> getCoupons(@RequestParam("userId") Long userId) {
-		return ApiResponse.ok(
-			new CouponReadAllResponse(
-				userId,
-				List.of(
-					new CouponInfo(
-						1L,
-						"10% 할인 쿠폰",
-						"RATE",
-						BigDecimal.valueOf(10),
-						LocalDate.of(2023, 10, 1),
-						LocalDate.of(2023, 10, 31)
-					),
-					new CouponInfo(
-						2L,
-						"10000원 할인 쿠폰",
-						"AMOUNT",
-						BigDecimal.valueOf(10000),
-						LocalDate.of(2023, 10, 1),
-						LocalDate.of(2023, 10, 31)
-					)
-				)
-			)
-		);
-	}
+	private final CouponService couponService;
 
 	@PostMapping("/issue")
-	public ResponseEntity<Void> issueCoupon(@RequestBody CouponIssueRequest request) {
-		return ResponseEntity.noContent().build();
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void issueCoupon(@Valid @RequestBody CouponIssueRequest request) {
+		couponService.issueCoupon(request.toIssueCommand());
 	}
 }

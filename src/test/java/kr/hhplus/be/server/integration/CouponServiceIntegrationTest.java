@@ -62,7 +62,8 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 		assertAll(
 			() -> assertThat(result.getId()).isEqualTo(savedId),
 			() -> assertThat(result.getUserId()).isEqualTo(100L),
-			() -> assertThat(result.getCouponSnapshot().getDiscountValue()).isEqualByComparingTo(BigDecimal.valueOf(1000)),
+			() -> assertThat(result.getCouponSnapshot().getDiscountValue()).isEqualByComparingTo(
+				BigDecimal.valueOf(1000)),
 			() -> assertThat(result.getCouponSnapshot().getDiscountType()).isEqualTo(DiscountType.FIXED)
 		);
 	}
@@ -90,17 +91,17 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 			.set(Select.field(Coupon.class, "validTo"), LocalDate.now().plusDays(5))
 			.create();
 
-		couponRepository.save(coupon);
+		Coupon savedCoupon = couponRepository.save(coupon);
 
 		Long userId = 1L;
-		CouponIssueCommand command = new CouponIssueCommand(userId, coupon.getId());
+		CouponIssueCommand command = new CouponIssueCommand(userId, savedCoupon.getId());
 
 		// when
 		couponService.issueCoupon(command);
 
 		// then
-		PublishedCoupon issued = couponRepository.findPublishedCouponBy(userId, coupon.getId());
-		Coupon updatedCoupon = couponRepository.findById(coupon.getId());
+		PublishedCoupon issued = couponRepository.findPublishedCouponBy(userId, savedCoupon.getId());
+		Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId());
 
 		assertAll(
 			() -> assertThat(issued.getUserId()).isEqualTo(userId),

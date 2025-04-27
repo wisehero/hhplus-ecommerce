@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.concurrency;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
@@ -9,8 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.instancio.Instancio;
-import org.instancio.Select;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +18,8 @@ import kr.hhplus.be.server.domain.point.Point;
 import kr.hhplus.be.server.domain.point.PointRepository;
 import kr.hhplus.be.server.domain.point.PointService;
 import kr.hhplus.be.server.domain.point.dto.PointChargeCommand;
+import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
+import kr.hhplus.be.server.infra.point.PointJpaRepository;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 
 public class PointServiceConcurrencyTest extends IntgerationTestSupport {
@@ -28,56 +28,95 @@ public class PointServiceConcurrencyTest extends IntgerationTestSupport {
 	private PointService pointService;
 
 	@Autowired
-	private PointRepository pointRepository;
+	private PointJpaRepository pointJpaRepository;
 
 	@Test
-	@DisplayName("동시에 포인트 충전 요청이 2번 들어오면 누락 없이 두 번 모두 충전되어야 한다")
-	void testConcurrentPointChargeRace() throws InterruptedException {
+	@DisplayName("동시성 테스트 실패 케이스: 보유 포인트 1000에서 포인트 500 충전, 포인트 100 사용 요청이 동시에 발생했을 때 정확한 잔액이 아닌 경우")
+	void concurrentPointChargeAndUseFailTest() throws InterruptedException {
 		// given
-		long userId = 42L;
-		BigDecimal initialBalance = BigDecimal.valueOf(100L);
-		BigDecimal chargeAmount = BigDecimal.valueOf(100L);
+		Long userId = 1L;
+		Balance initialBalance = Balance.createBalance(BigDecimal.valueOf(1000));
+		BigDecimal chargeAmount = BigDecimal.valueOf(500);
+		BigDecimal useAmount = BigDecimal.valueOf(100);
 
-		// Instancio 로 초기 Point 엔티티 생성·저장
-		Point initial = Instancio.of(Point.class)
-			.ignore(Select.field(Point.class, "id"))
-			.set(Select.field(Point.class, "userId"), userId)
-			.set(Select.field(Balance.class, "amount"), initialBalance)
-			.create();
-		pointRepository.save(initial);
+		pointJpaRepository.save(Point.create(userId, initialBalance));
 
-		// 2개의 스레드를 동시에 실행하기 위한 latch
-		int threads = 2;
-		ExecutorService exec = Executors.newFixedThreadPool(threads);
-		CountDownLatch ready = new CountDownLatch(threads);
+		ExecutorService es = Executors.newFixedThreadPool(2);
+		CountDownLatch ready = new CountDownLatch(2);
 		CountDownLatch start = new CountDownLatch(1);
 
-		// when: 두 스레드가 거의 동시에 chargeUserPoint 호출
-		Runnable task = () -> {
+		Runnable chargeTask = () -> {
 			ready.countDown();
 			try {
 				start.await();
-				pointService.chargeUserPoint(new PointChargeCommand(userId, chargeAmount));
-			} catch (InterruptedException ignored) {
+				pointService.chargeUserPoint(new PointChargeCommand(1L, chargeAmount));
+			} catch (Exception ignored) {
 			}
 		};
 
-		for (int i = 0; i < threads; i++) {
-			exec.submit(task);
-		}
-		// 모든 스레드가 준비됐을 때
-		ready.await();
-		// 동시에 시작 신호
-		start.countDown();
-		exec.shutdown();
-		exec.awaitTermination(1, TimeUnit.SECONDS);
+		Runnable useTask = () -> {
+			ready.countDown();
+			try {
+				start.await();
+				pointService.useUserPoint(new PointUseCommand(1L, useAmount));
+			} catch (Exception ignored) {
+			}
+		};
 
-		// then: 기대는 initialBalance + 2 * chargeAmount
-		Point updated = pointRepository.findByUserId(userId);
-		assertAll(
-			() -> assertThat(updated.getAmount())
-				.as("동시 2회 충전 후 잔액이 누락 없이 두 번 모두 더해져야 한다")
-				.isEqualByComparingTo(initialBalance.add(chargeAmount.multiply(BigDecimal.valueOf(2))))
-		);
+		es.submit(chargeTask);
+		es.submit(useTask);
+		ready.await();
+		start.countDown();
+		es.shutdown();
+		es.awaitTermination(2, TimeUnit.SECONDS);
+
+		// then
+		Point result = pointJpaRepository.findByUserId(userId).orElseThrow();
+		assertThat(result.getAmount()).isNotEqualByComparingTo("1400"); // 1000 + 500 - 100 = 1400
+	}
+
+	@Test
+	@DisplayName("동시성 테스트 성공 케이스(낙관적 락): 보유 포인트 1000에서 포인트 500 충전, 포인트 100 사용 요청이 동시에 발생했을 때 잔액은 1400이다.")
+	void concurrentPointChargeAndUseTestOptimistic() throws InterruptedException {
+		// given
+		Long userId = 1L;
+		Balance initialBalance = Balance.createBalance(BigDecimal.valueOf(1000));
+		BigDecimal chargeAmount = BigDecimal.valueOf(500);
+		BigDecimal useAmount = BigDecimal.valueOf(100);
+
+		pointJpaRepository.save(Point.create(userId, initialBalance));
+
+		ExecutorService es = Executors.newFixedThreadPool(2);
+		CountDownLatch ready = new CountDownLatch(2);
+		CountDownLatch start = new CountDownLatch(1);
+
+		Runnable chargeTask = () -> {
+			ready.countDown();
+			try {
+				start.await();
+				pointService.chargeUserPointV2(new PointChargeCommand(1L, chargeAmount));
+			} catch (Exception ignored) {
+			}
+		};
+
+		Runnable useTask = () -> {
+			ready.countDown();
+			try {
+				start.await();
+				pointService.useUserPointV2(new PointUseCommand(1L, useAmount));
+			} catch (Exception ignored) {
+			}
+		};
+
+		es.submit(chargeTask);
+		es.submit(useTask);
+		ready.await();
+		start.countDown();
+		es.shutdown();
+		es.awaitTermination(2, TimeUnit.SECONDS);
+
+		// then
+		Point result = pointJpaRepository.findByUserId(userId).orElseThrow();
+		assertThat(result.getAmount()).isEqualByComparingTo("1400"); // 1000 + 500 - 100 = 1400
 	}
 }
