@@ -17,7 +17,6 @@ public class TransactionLoggingAspect {
 
 	@Around("@annotation(txAnn)")
 	public Object logTx(ProceedingJoinPoint pjp, Transactional txAnn) throws Throwable {
-		MethodSignature sig = (MethodSignature)pjp.getSignature();
 		String msg = pjp.getSignature().toShortString();
 
 		// 실제 새 트랜잭션이 시작된 경우에만 로그
