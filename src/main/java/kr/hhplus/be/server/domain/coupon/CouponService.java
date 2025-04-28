@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
+import kr.hhplus.be.server.support.aop.lock.DistributedLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +29,7 @@ public class CouponService {
 		return couponRepository.findPublishedCouponById(publishedCouponId);
 	}
 
+	// 쿠폰 발급 LockFree
 	@Transactional
 	public void issueCoupon(CouponIssueCommand command) {
 		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
@@ -43,6 +45,7 @@ public class CouponService {
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
+	// 	쿠폰 발급 : 비관적 락 사용
 	@Transactional
 	public void issueCouponV2(CouponIssueCommand command) {
 
@@ -60,6 +63,7 @@ public class CouponService {
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
+	// 쿠폰 발급 : 낙관적 락 사용
 	@Retryable(
 		value = {OptimisticLockingFailureException.class},
 		maxAttempts = 3,
@@ -86,6 +90,21 @@ public class CouponService {
 	public void recover(OptimisticLockingFailureException e, CouponIssueCommand command) {
 		log.info("OptimisticLockingFailureException 발생, 재시도 횟수 초과: {}", e.getMessage());
 		throw e;
+	}
+
+	@DistributedLock(key = "'coupon:' + #command.couponId")
+	@Transactional
+	public void issueCouponV4(CouponIssueCommand command) {
+		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
+			throw new CouponAlreadyIssuedException();
+		}
+
+		Coupon coupon = couponRepository.findById(command.couponId());
+		coupon.issue();
+
+		Coupon savedCoupon = couponRepository.save(coupon);
+		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
+		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
 	@Transactional

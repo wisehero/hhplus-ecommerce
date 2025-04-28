@@ -4,24 +4,19 @@ import static org.assertj.core.api.Assertions.*;
 import static org.instancio.Select.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 import kr.hhplus.be.server.domain.coupon.Coupon;
-import kr.hhplus.be.server.domain.coupon.CouponRepository;
 import kr.hhplus.be.server.domain.coupon.CouponService;
 import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
@@ -135,56 +130,56 @@ public class CouponServiceConcurrencyTest extends IntgerationTestSupport {
 	}
 
 	@Test
-	@DisplayName("동시성 제어 성공 테스트(낙관적 락) : 선착순 쿠폰 50개에 서로 다른 100명이 동시 발급 요청을 보낼 경우, 쿠폰 수량은 50개가 차감되어야 하고 발급받은 유저는 50명이다.")
-	void couponConcurrencyTestOptimistic() throws InterruptedException {
+	@DisplayName("분산 락 적용 : 10개 수량이 남은 쿠폰에 대해 20명이 쿠폰 발급을 요청했을 때 사용자 10명에게 쿠폰이 발급되고 10명은 쿠폰 발급을 받지 못한다.")
+	void couponIssueDistriubtedLockTest() throws InterruptedException {
 		// given
 		Coupon coupon = Instancio.of(Coupon.class)
 			.ignore(field(Coupon.class, "id"))
 			.set(field(Coupon.class, "issuePolicyType"), CouponIssuePolicyType.LIMITED)
-			.set(field(Coupon.class, "remainingCount"), 50L)
+			.set(field(Coupon.class, "remainingCount"), 10L)
 			.create();
 		coupon = couponJpaRepository.save(coupon);
 		Long couponId = coupon.getId();
 
-		int totalUsers = 100;
-		List<Long> successUsers = Collections.synchronizedList(new ArrayList<>());
-		List<Long> failedUsers = Collections.synchronizedList(new ArrayList<>());
+		int totalUsers = 20;
 
-		ExecutorService es = Executors.newFixedThreadPool(totalUsers);
+		ExecutorService exec = Executors.newFixedThreadPool(totalUsers);
 		CountDownLatch ready = new CountDownLatch(totalUsers);
 		CountDownLatch start = new CountDownLatch(1);
 
+		AtomicInteger successCount = new AtomicInteger();
+		AtomicInteger failCount = new AtomicInteger();
+
 		for (int i = 0; i < totalUsers; i++) {
 			final long userId = i + 1L;
-			es.submit(() -> {
+			exec.submit(() -> {
 				ready.countDown();
 				try {
 					start.await();
 					CouponIssueCommand command = new CouponIssueCommand(userId, couponId);
-					couponService.issueCouponV3(command);
-					successUsers.add(userId);
+					couponService.issueCouponV4(command);
+					successCount.incrementAndGet();
 				} catch (Exception ignored) {
-					failedUsers.add(userId);
+					failCount.incrementAndGet();
 				}
 			});
 		}
 
-		ready.await();   // 모든 스레드가 준비될 때까지 대기
-		start.countDown(); // 동시에 시작
-		es.shutdown();
-		es.awaitTermination(2, TimeUnit.SECONDS);
+		ready.await();
+		start.countDown();
+		exec.shutdown();
+		exec.awaitTermination(1, TimeUnit.SECONDS);
 
 		// then
 		Coupon after = couponJpaRepository.findById(coupon.getId()).orElseThrow();
-		List<PublishedCoupon> allIssued = publishedCouponJpaRepository.findAll();
 
-		System.out.println("발급된 쿠폰 개수 : " + allIssued.size());
-		System.out.println("쿠폰 잔여 재고 쿠폰 개수 : " + after.getRemainingCount());
 		assertAll(
-			() -> assertThat(allIssued.size()).isEqualTo(successUsers.size())
-				.as("전체 쿠폰 발급 건 수는 발급 성공한 유저 수와 같다."),
-			() -> assertThat(50 - allIssued.size()).isEqualTo(after.getRemainingCount().intValue())
-				.as("원래 수량에서 발급받은 유저의 개수를 차감하면 남은 수량과 같다.")
+			() -> assertThat(successCount.get()).isEqualTo(10)
+				.as("성공 발급 수는 10명이어야 한다."),
+			() -> assertThat(failCount.get()).isEqualTo(10)
+				.as("실패 발급 수는 10명이어야 한다."),
+			() -> assertThat(after.getRemainingCount()).isEqualTo(0L)
+				.as("쿠폰 수량이 정확히 10개 차감된다.")
 		);
 	}
 }
