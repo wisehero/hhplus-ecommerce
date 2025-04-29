@@ -44,9 +44,6 @@ public class Coupon extends BaseTimeEntity {
 
 	private LocalDate validTo;
 
-	@Version
-	private Long version;
-
 	private Coupon(
 		String couponName,
 		BigDecimal discountValue,

@@ -63,35 +63,6 @@ public class CouponService {
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
-	// 쿠폰 발급 : 낙관적 락 사용
-	@Retryable(
-		value = {OptimisticLockingFailureException.class},
-		maxAttempts = 3,
-		backoff = @Backoff(delay = 200, multiplier = 2)
-	)
-	@Transactional
-	public void issueCouponV3(CouponIssueCommand command) {
-
-		Coupon coupon = couponRepository.findByIdWithOptimistic(command.couponId());
-
-		if (couponRepository.existsPublishedCouponBy(command.userId(), command.couponId())) {
-			throw new CouponAlreadyIssuedException();
-		}
-
-		coupon.issue();
-
-		Coupon savedCoupon = couponRepository.save(coupon);
-
-		PublishedCoupon publishedCoupon = PublishedCoupon.create(command.userId(), savedCoupon, LocalDate.now());
-		couponRepository.savePublishedCoupon(publishedCoupon);
-	}
-
-	@Recover
-	public void recover(OptimisticLockingFailureException e, CouponIssueCommand command) {
-		log.info("OptimisticLockingFailureException 발생, 재시도 횟수 초과: {}", e.getMessage());
-		throw e;
-	}
-
 	@DistributedLock(key = "'coupon:' + #command.couponId")
 	@Transactional
 	public void issueCouponV4(CouponIssueCommand command) {
