@@ -51,8 +51,9 @@ dependencies {
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
     // redis
+    implementation ("org.springframework.boot:spring-boot-starter-data-redis")
     implementation ("org.redisson:redisson-spring-boot-starter:3.45.1")
-    testImplementation("com.redis.testcontainers:testcontainers-redis:1.6.4")
+
 
     // DB
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -61,6 +62,7 @@ dependencies {
     testImplementation("org.instancio:instancio-junit:5.4.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("com.redis.testcontainers:testcontainers-redis:1.6.4")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:mysql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
