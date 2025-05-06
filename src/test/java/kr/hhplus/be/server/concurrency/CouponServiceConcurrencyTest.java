@@ -130,7 +130,65 @@ public class CouponServiceConcurrencyTest extends IntgerationTestSupport {
 	}
 
 	@Test
-	@DisplayName("분산 락 적용 : 10개 수량이 남은 쿠폰에 대해 20명이 쿠폰 발급을 요청했을 때 사용자 10명에게 쿠폰이 발급되고 10명은 쿠폰 발급을 받지 못한다.")
+	@DisplayName("스핀 락 적용 : 10개 수량이 남은 쿠폰에 대해 20명이 쿠폰 발급을 요청했을 때 사용자 10명에게 쿠폰이 발급되고 10명은 쿠폰 발급을 받지 못한다.")
+	void couponIssueSpinLockTest() throws InterruptedException {
+		// given
+		Coupon coupon = Instancio.of(Coupon.class)
+			.ignore(field(Coupon.class, "id"))
+			.set(field(Coupon.class, "issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.set(field(Coupon.class, "remainingCount"), 10L)
+			.create();
+		coupon = couponJpaRepository.save(coupon);
+		Long couponId = coupon.getId();
+
+		int totalUsers = 20;
+
+		ExecutorService exec = Executors.newFixedThreadPool(totalUsers);
+		CountDownLatch ready = new CountDownLatch(totalUsers);
+		CountDownLatch start = new CountDownLatch(1);
+
+		AtomicInteger successCount = new AtomicInteger();
+		AtomicInteger failCount = new AtomicInteger();
+
+		for (int i = 0; i < totalUsers; i++) {
+			final long userId = i + 1L;
+			exec.submit(() -> {
+				ready.countDown();
+				try {
+					start.await();
+					CouponIssueCommand command = new CouponIssueCommand(userId, couponId);
+					couponService.issueCouponV3(command);
+					successCount.incrementAndGet();
+				} catch (Exception ignored) {
+					failCount.incrementAndGet();
+				}
+			});
+		}
+
+		ready.await();
+		long startTime = System.currentTimeMillis(); // 시간 측정 시작
+		start.countDown();
+		exec.shutdown();
+		exec.awaitTermination(3, TimeUnit.SECONDS);
+
+
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		System.out.println("전체 요청 처리 시간(ms): " + elapsedTime);
+
+		// then
+		Coupon after = couponJpaRepository.findById(coupon.getId()).orElseThrow();
+		List<PublishedCoupon> issued = publishedCouponJpaRepository.findAll();
+
+		assertAll(
+			() -> assertThat(successCount.get()).isEqualTo(10),
+			() -> assertThat(failCount.get()).isEqualTo(10),
+			() -> assertThat(after.getRemainingCount()).isEqualTo(0L),
+			() -> assertThat(issued.size()).isEqualTo(10)
+		);
+	}
+
+	@Test
+	@DisplayName("Pub/sub 락 적용 : 10개 수량이 남은 쿠폰에 대해 20명이 쿠폰 발급을 요청했을 때 사용자 10명에게 쿠폰이 발급되고 10명은 쿠폰 발급을 받지 못한다.")
 	void couponIssueDistriubtedLockTest() throws InterruptedException {
 		// given
 		Coupon coupon = Instancio.of(Coupon.class)
@@ -166,20 +224,25 @@ public class CouponServiceConcurrencyTest extends IntgerationTestSupport {
 		}
 
 		ready.await();
+
+		long startTime = System.currentTimeMillis(); // 시간 측정 시작
+
 		start.countDown();
 		exec.shutdown();
-		exec.awaitTermination(1, TimeUnit.SECONDS);
+		exec.awaitTermination(3, TimeUnit.SECONDS);
+
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		System.out.println("전체 요청 처리 시간(ms): " + elapsedTime);
 
 		// then
 		Coupon after = couponJpaRepository.findById(coupon.getId()).orElseThrow();
+		List<PublishedCoupon> issued = publishedCouponJpaRepository.findAll();
 
 		assertAll(
-			() -> assertThat(successCount.get()).isEqualTo(10)
-				.as("성공 발급 수는 10명이어야 한다."),
-			() -> assertThat(failCount.get()).isEqualTo(10)
-				.as("실패 발급 수는 10명이어야 한다."),
-			() -> assertThat(after.getRemainingCount()).isEqualTo(0L)
-				.as("쿠폰 수량이 정확히 10개 차감된다.")
+			() -> assertThat(successCount.get()).isEqualTo(10),
+			() -> assertThat(failCount.get()).isEqualTo(10),
+			() -> assertThat(after.getRemainingCount()).isEqualTo(0L),
+			() -> assertThat(issued.size()).isEqualTo(10)
 		);
 	}
 }

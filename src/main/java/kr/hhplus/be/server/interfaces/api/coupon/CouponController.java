@@ -22,6 +22,18 @@ public class CouponController implements CouponControllerSpec {
 	@PostMapping("/issue")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void issueCoupon(@Valid @RequestBody CouponIssueRequest request) {
-		couponService.issueCoupon(request.toIssueCommand());
+		couponService.issueCouponV2(request.toIssueCommand());
+	}
+
+	@PostMapping("/issue/spin")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void issueCouponV3(@Valid @RequestBody CouponIssueRequest request) {
+		couponService.issueCouponV3(request.toIssueCommand());
+	}
+
+	@PostMapping("/issue/pubsub")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void issueCouponV2(@Valid @RequestBody CouponIssueRequest request) {
+		couponService.issueCouponV4(request.toIssueCommand());
 	}
 }
