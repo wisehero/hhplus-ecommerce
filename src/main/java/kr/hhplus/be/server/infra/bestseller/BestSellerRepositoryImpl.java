@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.infra.bestseller;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -35,8 +34,8 @@ public class BestSellerRepositoryImpl implements BestSellerRepository {
 	}
 
 	@Override
-	public List<BestSeller> findTopBySalesCountSince(LocalDateTime from, int limit) {
-		return bestSellerJpaRepository.findTopBySalesCountSince(from, limit);
+	public List<BestSeller> findTop100DateBetween(LocalDateTime from, LocalDateTime to) {
+		return bestSellerJpaRepository.findTop100DateBetween(from, to);
 	}
 
 	@Override
