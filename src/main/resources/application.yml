@@ -29,6 +29,10 @@ spring:
     url: jdbc:mysql://localhost:3306/hhplus?characterEncoding=UTF-8&serverTimezone=UTC
     username: application
     password: application
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 springdoc:
   packages-to-scan: kr.hhplus.be.server.interfaces.api
@@ -41,5 +45,3 @@ springdoc:
     operations-sorter: alpha
   api-docs:
     path: /hhplus/v3/api-docs
-
-
