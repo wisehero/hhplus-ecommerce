@@ -57,6 +57,8 @@ class PublishedCouponTest {
 	@DisplayName("정상적인 할인 적용 시 할인 금액이 계산되고 사용 처리된다.")
 	void applyDiscount() {
 		// given
+		LocalDate fixedDate = LocalDate.of(2025, 4, 15);
+
 		Coupon coupon = Coupon.createUnlimited(
 			"웰컴쿠폰",
 			BigDecimal.valueOf(3000),
@@ -65,13 +67,13 @@ class PublishedCouponTest {
 			LocalDate.of(2025, 4, 30)
 		);
 
-		LocalDate issuedAt = LocalDate.of(2025, 4, 10);
+		LocalDate issuedAt = LocalDate.of(2025, 4, 15);
 		PublishedCoupon published = PublishedCoupon.create(1L, coupon, issuedAt);
 
 		BigDecimal originalPrice = BigDecimal.valueOf(10000);
 
 		// when
-		BigDecimal discounted = published.discount(originalPrice, LocalDate.now());
+		BigDecimal discounted = published.discount(originalPrice, fixedDate);
 
 		// then
 		assertAll(
@@ -84,6 +86,8 @@ class PublishedCouponTest {
 	@DisplayName("이미 사용된 쿠폰이라면 CouponAlreadyUsedException 발생")
 	void couponAlreadyUsedException() {
 		// given
+		LocalDate fixedDate = LocalDate.of(2025, 4, 15);
+
 		Coupon coupon = Coupon.createUnlimited(
 			"웰컴쿠폰",
 			BigDecimal.valueOf(3000),
@@ -94,11 +98,11 @@ class PublishedCouponTest {
 		LocalDate issuedAt = LocalDate.of(2025, 4, 10);
 		PublishedCoupon published = PublishedCoupon.create(1L, coupon, issuedAt);
 
-		// when - first use
-		published.discount(BigDecimal.valueOf(10000), LocalDate.now());
+		// when
+		published.discount(BigDecimal.valueOf(10000), fixedDate);
 
-		// then - second use
-		assertThatThrownBy(() -> published.discount(BigDecimal.valueOf(10000), LocalDate.now()))
+		// then
+		assertThatThrownBy(() -> published.discount(BigDecimal.valueOf(10000), fixedDate))
 			.isInstanceOf(CouponAlreadyUsedException.class)
 			.hasMessage("비즈니스 정책을 위반한 요청입니다.")
 			.extracting("detail")
@@ -109,6 +113,8 @@ class PublishedCouponTest {
 	@DisplayName("할인을 적용해야하는 가격이 null이거나 0 이하일 경우 IllegalArgumentException 발생")
 	void discount_invalidPrice_shouldThrow() {
 		// given
+		LocalDate fixedDate = LocalDate.of(2025, 4, 15);
+
 		Coupon coupon = Coupon.createUnlimited(
 			"웰컴쿠폰",
 			BigDecimal.valueOf(3000),
@@ -121,10 +127,10 @@ class PublishedCouponTest {
 
 		// when & then
 		assertAll(
-			() -> assertThatThrownBy(() -> published.discount(null, LocalDate.now()))
+			() -> assertThatThrownBy(() -> published.discount(null, fixedDate))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessage("가격이 null이거나 0 이하입니다."),
-			() -> assertThatThrownBy(() -> published.discount(BigDecimal.ZERO, LocalDate.now()))
+			() -> assertThatThrownBy(() -> published.discount(BigDecimal.ZERO, fixedDate))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessage("가격이 null이거나 0 이하입니다.")
 		);
@@ -157,6 +163,8 @@ class PublishedCouponTest {
 	@DisplayName("사용된 쿠폰을 restore() 하면 isUsed 상태가 false로 변경된다.")
 	void restore_usedCoupon_shouldSetIsUsedFalse() {
 		// given
+		LocalDate fixedDate = LocalDate.of(2025, 4, 15);
+
 		Coupon coupon = Coupon.createUnlimited(
 			"테스트 쿠폰",
 			BigDecimal.valueOf(5000),
@@ -167,7 +175,7 @@ class PublishedCouponTest {
 		PublishedCoupon published = PublishedCoupon.create(1L, coupon, LocalDate.of(2025, 4, 10));
 
 		// when
-		published.discount(BigDecimal.valueOf(10000), LocalDate.now());
+		published.discount(BigDecimal.valueOf(10000), fixedDate);
 		published.restore();
 
 		// then
