@@ -3,6 +3,7 @@ package kr.hhplus.be.server.support;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -14,8 +15,12 @@ public abstract class IntgerationTestSupport {
 	@Autowired
 	private DbCleaner dbCleaner;
 
+	@Autowired
+	private RedisCacheManager redisCacheManager;
+
 	@BeforeEach
 	public void clean() {
+		redisCacheManager.getCacheNames().forEach(name -> redisCacheManager.getCache(name).clear());
 		dbCleaner.execute();
 	}
 }
