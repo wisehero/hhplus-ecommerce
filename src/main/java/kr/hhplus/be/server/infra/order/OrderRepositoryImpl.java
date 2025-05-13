@@ -39,7 +39,12 @@ public class OrderRepositoryImpl implements OrderRepository {
 
 	@Override
 	public List<Order> findAllPendingBefore(OrderStatus orderStatus, LocalDateTime deadline) {
-		return orderJpaRepository.findAllPendingBefore(orderStatus, deadline);
+		List<Order> orders = orderJpaRepository.findAllPendingBefore(orderStatus, deadline);
+		orders.forEach(order -> {
+			List<OrderProduct> orderProducts = orderProductJpaRepository.findAllByOrderId(order.getId());
+			order.assignOrderProduct(orderProducts);
+		});
+		return orders;
 	}
 
 	@Override
