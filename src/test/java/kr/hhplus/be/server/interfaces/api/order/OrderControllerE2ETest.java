@@ -9,18 +9,15 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.instancio.Instancio;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.web.client.RestClient;
 
 import kr.hhplus.be.server.common.ErrorResponse;
 import kr.hhplus.be.server.domain.product.Product;
@@ -31,33 +28,15 @@ import kr.hhplus.be.server.interfaces.api.ApiResponse;
 import kr.hhplus.be.server.interfaces.api.order.request.OrderCreateRequest;
 import kr.hhplus.be.server.interfaces.api.order.request.OrderProductRequest;
 import kr.hhplus.be.server.interfaces.api.order.response.OrderCreateResponse;
-import kr.hhplus.be.server.support.DbCleaner;
 import kr.hhplus.be.server.support.E2ETestSupprot;
 
 class OrderControllerE2ETest extends E2ETestSupprot {
-
-	@LocalServerPort
-	int port;
-
-	@Autowired
-	DbCleaner dbCleaner;
 
 	@Autowired
 	ProductJpaRepository productJpaRepository;
 
 	@Autowired
 	UserJpaRepository userJpaRepository;
-
-	RestClient restClient;
-
-	@BeforeEach
-	void setUp() {
-		restClient = RestClient.builder()
-			.baseUrl("http://localhost:" + port)
-			.build();
-
-		dbCleaner.execute();
-	}
 
 	@Test
 	@DisplayName("주문 생성 API를 호출하면 주문을 생성하고 201 Created 응답을 반환한다.")

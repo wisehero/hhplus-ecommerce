@@ -6,43 +6,22 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.client.RestClient;
 
 import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.infra.product.ProductJpaRepository;
 import kr.hhplus.be.server.interfaces.api.ApiResponse;
 import kr.hhplus.be.server.interfaces.api.product.response.ProductReadAllResponse;
-import kr.hhplus.be.server.support.DbCleaner;
 import kr.hhplus.be.server.support.E2ETestSupprot;
 
 class ProductControllerE2ETest extends E2ETestSupprot {
 
-	@LocalServerPort
-	int port;
-
-	@Autowired
-	DbCleaner dbCleaner;
-
 	@Autowired
 	ProductJpaRepository productJpaRepository;
-
-	@BeforeEach
-	void setUp() {
-		restClient = RestClient.builder()
-			.baseUrl("http://localhost:" + port)
-			.build();
-
-		dbCleaner.execute();
-	}
-
-	RestClient restClient;
 
 	@Test
 	@DisplayName("상품 목록 조회 API를 호출하면 상품 목록을 조회할 수 있다.")

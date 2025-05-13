@@ -8,19 +8,14 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.instancio.Instancio;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.params.provider.ValueSources;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.web.client.RestClient;
 
 import kr.hhplus.be.server.common.ErrorResponse;
 import kr.hhplus.be.server.domain.coupon.Coupon;
@@ -29,33 +24,15 @@ import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
 import kr.hhplus.be.server.infra.coupon.CouponJpaRepository;
 import kr.hhplus.be.server.infra.coupon.PublishedCouponJpaRepository;
 import kr.hhplus.be.server.interfaces.api.coupon.request.CouponIssueRequest;
-import kr.hhplus.be.server.support.DbCleaner;
 import kr.hhplus.be.server.support.E2ETestSupprot;
 
 class CouponControllerE2ETest extends E2ETestSupprot {
-
-	@LocalServerPort
-	int port;
-
-	@Autowired
-	DbCleaner dbCleaner;
 
 	@Autowired
 	CouponJpaRepository couponJpaRepository;
 
 	@Autowired
 	PublishedCouponJpaRepository publishedCouponJpaRepository;
-
-	RestClient restClient;
-
-	@BeforeEach
-	void setUp() {
-		restClient = RestClient.builder()
-			.baseUrl("http://localhost:" + port)
-			.build();
-
-		dbCleaner.execute();
-	}
 
 	@Test
 	@DisplayName("사용자 ID와 쿠폰 ID가 입력되면 쿠폰을 발급한다.")
