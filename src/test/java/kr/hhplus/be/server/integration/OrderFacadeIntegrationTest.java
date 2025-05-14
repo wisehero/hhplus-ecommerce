@@ -15,7 +15,6 @@ import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
@@ -33,9 +32,8 @@ import kr.hhplus.be.server.domain.product.ProductRepository;
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
 import kr.hhplus.be.server.domain.user.User;
 import kr.hhplus.be.server.domain.user.UserRepository;
-import kr.hhplus.be.server.infra.bestseller.cache.BestSellerCacheRepository;
+import kr.hhplus.be.server.infra.bestseller.redis.BestSellerRedisRepository;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
-import kr.hhplus.be.server.support.RedisTestSupport;
 
 public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 
@@ -58,7 +56,7 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 	private UserRepository userRepository;
 
 	@Autowired
-	private BestSellerCacheRepository bestSellerCacheRepository;
+	private BestSellerRedisRepository bestSellerCacheRepository;
 
 	@Test
 	@DisplayName("유효한 유저, 상품, 쿠폰으로 주문 생성 시 정상적으로 주문이 생성되고, 재고가 차감되며 할인도 적용된다.")
@@ -178,9 +176,10 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 	@DisplayName("주문이 성공하면 인기상품 점수 기록 이벤트가 발행되고 Redis에 상품 판매 정보가 저장된다")
 	void orderShouldPublishEventAndUpdateBestSellerCache() {
 		// given
-		final String REDIS_KEY_PREFIX_RANKING = "bestseller:realtime:" +
+		String REDIS_KEY_PREFIX_RANKING = "bestseller:realtime:" +
 			LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-		final String REDIS_KEY_PREFIX_PRODUCT_NAME = "bestseller:productname:";
+		String REDIS_KEY_PREFIX_PRODUCT_NAME = "bestseller:productname:" +
+			LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
 		User user = userRepository.save(Instancio.of(User.class)
 			.ignore(field("id"))

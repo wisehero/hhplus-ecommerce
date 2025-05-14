@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.infra.bestseller.cache;
+package kr.hhplus.be.server.infra.bestseller.redis;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,10 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import kr.hhplus.be.server.domain.bestseller.dto.BestSellerItem;
 import kr.hhplus.be.server.support.RedisTestSupport;
 
-class BestSellerCacheRepositoryTest extends RedisTestSupport {
+class BestSellerRedisRepositoryTest extends RedisTestSupport {
 
 	@Autowired
-	private BestSellerCacheRepository bestSellerCacheRepository;
+	private BestSellerRedisRepository bestSellerRedisRepository;
 
 	private final String KEY_PREFIX_RANKING = "bestseller:realtime:" +
 		LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -31,7 +31,7 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 		BestSellerItem item = new BestSellerItem(1L, "테스트 상품", 3L);
 
 		// when
-		bestSellerCacheRepository.incrementScore(item);
+		bestSellerRedisRepository.incrementScore(item);
 
 		// then
 		Double score = redisTemplate.opsForZSet().score(KEY_PREFIX_RANKING, "1");
@@ -50,7 +50,7 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 		BestSellerItem item = new BestSellerItem(1L, "테스트 상품", 3L);
 
 		// when
-		bestSellerCacheRepository.incrementScore(item);
+		bestSellerRedisRepository.incrementScore(item);
 
 		// then
 		// 랭킹 키와 상품명 키 모두 TTL이 설정되어 있는지 확인
@@ -79,8 +79,8 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 		BestSellerItem item2 = new BestSellerItem(1L, "테스트 상품", 2L);
 
 		// when
-		bestSellerCacheRepository.incrementScore(item1);
-		bestSellerCacheRepository.incrementScore(item2);
+		bestSellerRedisRepository.incrementScore(item1);
+		bestSellerRedisRepository.incrementScore(item2);
 
 		// then
 		Double score = redisTemplate.opsForZSet().score(KEY_PREFIX_RANKING, "1");
@@ -93,11 +93,11 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 		// given
 		for (long i = 1; i <= 10; i++) {
 			long score = 11 - i;  // 1부터 10까지 역순으로 점수 부여 (10, 9, 8, ..., 1)
-			bestSellerCacheRepository.incrementScore(new BestSellerItem(i, "상품" + i, score));
+			bestSellerRedisRepository.incrementScore(new BestSellerItem(i, "상품" + i, score));
 		}
 
 		// when
-		List<String> topProducts = bestSellerCacheRepository.getTodayTopProductNames(10);
+		List<String> topProducts = bestSellerRedisRepository.getTodayTopProductNames(10);
 
 		// then
 		assertAll(
@@ -125,11 +125,11 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 		}
 
 		for (long i = 101; i <= 105; i++) {
-			bestSellerCacheRepository.incrementScore(new BestSellerItem(i, "오늘상품" + i, 20 - i)); // 오늘 상품은 5개
+			bestSellerRedisRepository.incrementScore(new BestSellerItem(i, "오늘상품" + i, 20 - i)); // 오늘 상품은 5개
 		}
 
 		// when
-		List<String> topProductNames = bestSellerCacheRepository.getTodayTopProductNames(10);
+		List<String> topProductNames = bestSellerRedisRepository.getTodayTopProductNames(10);
 
 		// then
 		assertAll(
@@ -159,11 +159,11 @@ class BestSellerCacheRepositoryTest extends RedisTestSupport {
 
 		// 오늘 데이터는 10개 이상 (충분함)
 		for (long i = 101; i <= 112; i++) {
-			bestSellerCacheRepository.incrementScore(new BestSellerItem(i, "오늘상품" + i, 120 - i));
+			bestSellerRedisRepository.incrementScore(new BestSellerItem(i, "오늘상품" + i, 120 - i));
 		}
 
 		// when
-		List<String> topProducts = bestSellerCacheRepository.getTodayTopProductNames(10);
+		List<String> topProducts = bestSellerRedisRepository.getTodayTopProductNames(10);
 
 		// then
 		assertAll(

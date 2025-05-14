@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.infra.bestseller.cache;
+package kr.hhplus.be.server.infra.bestseller.redis;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
-public class BestSellerRedisRepositoryImpl implements BestSellerCacheRepository {
+public class BestSellerRedisRepositoryImpl implements BestSellerRedisRepository {
 
 	private final RedisTemplate<String, Object> redisTemplate;
 
