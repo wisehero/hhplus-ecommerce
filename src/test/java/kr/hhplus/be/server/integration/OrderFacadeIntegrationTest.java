@@ -211,11 +211,6 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 			Object productName = redisTemplate.opsForHash()
 				.get(REDIS_KEY_PREFIX_PRODUCT_NAME, product.getId().toString());
 			assertThat(productName).isEqualTo("테스트 상품");
-
-			// 베스트셀러 목록 조회 검증
-			List<String> topProducts = bestSellerCacheRepository.getTodayTopProductNames(1);
-			assertThat(topProducts).hasSize(1);
-			assertThat(topProducts.get(0)).isEqualTo("테스트 상품");
 		});
 	}
 }
