@@ -1,10 +1,10 @@
-package kr.hhplus.be.server.infra.bestseller.cache;
+package kr.hhplus.be.server.infra.bestseller.redis;
 
 import java.util.List;
 
 import kr.hhplus.be.server.domain.bestseller.dto.BestSellerItem;
 
-public interface BestSellerCacheRepository {
+public interface BestSellerRedisRepository {
 
 	void incrementScore(BestSellerItem item);
 
