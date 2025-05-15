@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import kr.hhplus.be.server.domain.base.BaseTimeEntity;
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
+import kr.hhplus.be.server.domain.coupon.exception.CouponOutOfStockException;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -109,6 +110,13 @@ public class Coupon extends BaseTimeEntity {
 
 	public void issue() {
 		this.issuePolicyType.toPolicy().issue(this);
+	}
+
+	public void decreaseStock(int quantity) {
+		if (this.remainingCount < quantity) {
+			throw new CouponOutOfStockException(this.getId());
+		}
+		this.remainingCount -= quantity;
 	}
 
 	public void decreaseRemainingCount() {
