@@ -1,11 +1,12 @@
 package kr.hhplus.be.server.application.order.facade;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
 import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
+import kr.hhplus.be.server.domain.bestseller.event.type.BestSellerRealTimeUpdatedEvent;
 import kr.hhplus.be.server.domain.coupon.CouponService;
 import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.order.Order;
@@ -24,6 +25,7 @@ public class OrderFacade {
 	private final CouponService couponService;
 	private final OrderService orderService;
 	private final UserService userService;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	public OrderCreateResult createOrderV1(OrderCreateCommand command) {
@@ -66,6 +68,10 @@ public class OrderFacade {
 		command.orderLines().forEach(line -> {
 			Product product = productService.decreaseStockWithPessimistic(line.productId(), line.quantity());
 			order.addOrderProduct(product, line.quantity());
+
+			// 베스트셀러 업데이트 이벤트 발행
+			eventPublisher.publishEvent(
+				new BestSellerRealTimeUpdatedEvent(this, product.getId(), product.getProductName(), line.quantity()));
 		});
 
 		// 적용할 쿠폰이 있어?

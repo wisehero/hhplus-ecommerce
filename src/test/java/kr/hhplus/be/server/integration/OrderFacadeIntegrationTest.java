@@ -1,17 +1,21 @@
 package kr.hhplus.be.server.integration;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.*;
 import static org.instancio.Select.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import kr.hhplus.be.server.application.order.dto.OrderCreateCommand;
 import kr.hhplus.be.server.application.order.dto.OrderCreateResult;
@@ -28,12 +32,16 @@ import kr.hhplus.be.server.domain.product.ProductRepository;
 import kr.hhplus.be.server.domain.product.exception.ProductOutOfStockException;
 import kr.hhplus.be.server.domain.user.User;
 import kr.hhplus.be.server.domain.user.UserRepository;
+import kr.hhplus.be.server.infra.bestseller.redis.BestSellerRedisRepository;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 
 public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 
 	@Autowired
 	private OrderFacade orderFacade;
+
+	@Autowired
+	private RedisTemplate<String, Object> redisTemplate;
 
 	@Autowired
 	private OrderRepository orderRepository;
@@ -46,6 +54,9 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private BestSellerRedisRepository bestSellerCacheRepository;
 
 	@Test
 	@DisplayName("유효한 유저, 상품, 쿠폰으로 주문 생성 시 정상적으로 주문이 생성되고, 재고가 차감되며 할인도 적용된다.")
@@ -159,5 +170,47 @@ public class OrderFacadeIntegrationTest extends IntgerationTestSupport {
 		// when & then
 		assertThatThrownBy(() -> orderFacade.createOrderV1(command))
 			.isInstanceOf(ProductOutOfStockException.class);
+	}
+
+	@Test
+	@DisplayName("주문이 성공하면 인기상품 점수 기록 이벤트가 발행되고 Redis에 상품 판매 정보가 저장된다")
+	void orderShouldPublishEventAndUpdateBestSellerCache() {
+		// given
+		String REDIS_KEY_PREFIX_RANKING = "bestseller:realtime:" +
+			LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+		String REDIS_KEY_PREFIX_PRODUCT_NAME = "bestseller:productname:" +
+			LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+		User user = userRepository.save(Instancio.of(User.class)
+			.ignore(field("id"))
+			.create());
+
+		Product product = productRepository.save(Instancio.of(Product.class)
+			.ignore(field("id"))
+			.set(field("price"), BigDecimal.valueOf(10000))
+			.set(field("stock"), 100L)
+			.set(field("productName"), "테스트 상품")
+			.create());
+
+		OrderCreateCommand command = new OrderCreateCommand(
+			user.getId(),
+			null,
+			List.of(new OrderLine(product.getId(), 5L)) // 5개 주문
+		);
+
+		// when
+		orderFacade.createOrderV2(command); // V2 사용 (이벤트 발행 포함)
+
+		// then - Redis에 저장되었는지 검증
+		await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			// 판매량 점수 검증
+			Double score = redisTemplate.opsForZSet().score(REDIS_KEY_PREFIX_RANKING, product.getId().toString());
+			assertThat(score).isEqualTo(5.0);
+
+			// 상품명 저장 검증
+			Object productName = redisTemplate.opsForHash()
+				.get(REDIS_KEY_PREFIX_PRODUCT_NAME, product.getId().toString());
+			assertThat(productName).isEqualTo("테스트 상품");
+		});
 	}
 }

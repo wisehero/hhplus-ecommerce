@@ -37,6 +37,10 @@ public class BestSellerService {
 			});
 	}
 
+	public List<String> getTodayRealTimeRankingProductNamesWithLimit(int limit) {
+		return bestSellerRepository.getRealTimeRankingProductNamesWithLimit(limit);
+	}
+
 	// TODO : 추후 파라미터로 Period를 받아서 key를 결정
 	// 일간 기준은 어제 00:00 ~ 어제 23:59
 	@Cacheable(value = "bestSeller:daily", key = "'default'")

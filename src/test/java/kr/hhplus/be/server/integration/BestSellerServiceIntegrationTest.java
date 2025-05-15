@@ -6,7 +6,9 @@ import static org.instancio.Select.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -15,6 +17,7 @@ import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import kr.hhplus.be.server.domain.bestseller.BestSeller;
 import kr.hhplus.be.server.domain.bestseller.BestSellerService;
@@ -30,6 +33,9 @@ public class BestSellerServiceIntegrationTest extends IntgerationTestSupport {
 
 	@Autowired
 	private BestSellerJpaRepository bestSellerRepository;
+
+	@Autowired
+	private RedisTemplate<String, Object> redisTemplate;
 
 	@Test
 	@DisplayName("BestSeller 저장 시, ID가 자동 할당되고 동일한 데이터가 DB에 저장된다.")
@@ -100,6 +106,48 @@ public class BestSellerServiceIntegrationTest extends IntgerationTestSupport {
 			() -> assertThat(bestSellers).hasSize(100),
 			() -> assertThat(bestSellers).isSortedAccordingTo(
 				Comparator.comparing(BestSellerSimpleInfo::salesCount).reversed())
+		);
+	}
+
+	@Test
+	@DisplayName("실시간 인기 상품 10개의 상품 이름을 조회할 수 있다")
+	void getTodayRealTimeRankingProductNamesWithLimit() {
+		// given
+		int limit = 10;
+		String todayRankingKey =
+			"bestseller:realtime:" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+		String productNamePrefix = "bestseller:productname:" +
+			LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+		// Redis에 테스트 데이터 설정 (15개 상품)
+		for (int i = 1; i <= 15; i++) {
+			String productId = String.valueOf(i);
+			String productName = "실시간 인기상품 " + i;
+
+			// 내림차순 점수 부여 (15, 14, 13, ...)
+			redisTemplate.opsForZSet().add(todayRankingKey, productId, 16 - i);
+			redisTemplate.opsForHash().put(productNamePrefix, productId, productName);
+		}
+
+		// when
+		List<String> topProducts = bestSellerService.getTodayRealTimeRankingProductNamesWithLimit(limit);
+
+		// then
+		assertAll(
+			() -> assertThat(topProducts).isNotEmpty(),
+			() -> assertThat(topProducts).hasSize(limit),
+			() -> assertThat(topProducts).containsExactly(
+				"실시간 인기상품 1",
+				"실시간 인기상품 2",
+				"실시간 인기상품 3",
+				"실시간 인기상품 4",
+				"실시간 인기상품 5",
+				"실시간 인기상품 6",
+				"실시간 인기상품 7",
+				"실시간 인기상품 8",
+				"실시간 인기상품 9",
+				"실시간 인기상품 10"
+			)
 		);
 	}
 }

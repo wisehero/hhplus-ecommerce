@@ -1,5 +1,7 @@
 package kr.hhplus.be.server.interfaces.api.bestseller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,5 +32,12 @@ public class BestSellerController implements BestSellerControllerSpec {
 		};
 
 		return ApiResponse.ok(new BestSellerReadAllResponse(result));
+	}
+
+	@GetMapping("/realtime")
+	public ApiResponse<List<String>> getTodayRealTimeRanking(
+		@RequestParam("limit") int limit
+	) {
+		return ApiResponse.ok(bestSellerService.getTodayRealTimeRankingProductNamesWithLimit(limit));
 	}
 }

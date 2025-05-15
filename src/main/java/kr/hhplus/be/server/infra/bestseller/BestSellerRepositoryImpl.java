@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 import kr.hhplus.be.server.domain.bestseller.BestSeller;
 import kr.hhplus.be.server.domain.bestseller.BestSellerRepository;
+import kr.hhplus.be.server.domain.bestseller.dto.BestSellerItem;
+import kr.hhplus.be.server.infra.bestseller.redis.BestSellerRedisRepository;
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class BestSellerRepositoryImpl implements BestSellerRepository {
 
 	private final BestSellerJpaRepository bestSellerJpaRepository;
+	private final BestSellerRedisRepository bestSellerRedisRepository;
 
 	@Override
 	public BestSeller save(BestSeller bestSeller) {
@@ -24,6 +27,11 @@ public class BestSellerRepositoryImpl implements BestSellerRepository {
 	@Override
 	public void saveAll(List<BestSeller> bestSellers) {
 		bestSellerJpaRepository.saveAll(bestSellers);
+	}
+
+	@Override
+	public List<String> getRealTimeRankingProductNamesWithLimit(int limit) {
+		return bestSellerRedisRepository.getTodayTopProductNames(limit);
 	}
 
 	@Override
@@ -41,5 +49,10 @@ public class BestSellerRepositoryImpl implements BestSellerRepository {
 	@Override
 	public Optional<BestSeller> findByProductId(Long productId) {
 		return bestSellerJpaRepository.findByProductId(productId);
+	}
+
+	@Override
+	public void incrementScore(BestSellerItem bestSellerItem) {
+		bestSellerRedisRepository.incrementScore(bestSellerItem);
 	}
 }

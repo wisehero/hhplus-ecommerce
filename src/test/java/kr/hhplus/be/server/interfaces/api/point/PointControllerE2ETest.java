@@ -7,22 +7,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.instancio.Instancio;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.web.client.RestClient;
 
 import kr.hhplus.be.server.common.ErrorResponse;
 import kr.hhplus.be.server.domain.order.Order;
@@ -38,13 +34,9 @@ import kr.hhplus.be.server.interfaces.api.ApiResponse;
 import kr.hhplus.be.server.interfaces.api.point.request.PointChargeRequest;
 import kr.hhplus.be.server.interfaces.api.point.request.PointUsageRequest;
 import kr.hhplus.be.server.interfaces.api.point.response.PointOfUserReadResponse;
-import kr.hhplus.be.server.support.DbCleaner;
 import kr.hhplus.be.server.support.E2ETestSupprot;
 
 class PointControllerE2ETest extends E2ETestSupprot {
-
-	@LocalServerPort
-	int port;
 
 	@Autowired
 	private PointJpaRepository pointJpaRepository;
@@ -54,20 +46,6 @@ class PointControllerE2ETest extends E2ETestSupprot {
 
 	@Autowired
 	private OrderProductJpaRepository orderProductJpaRepository;
-
-	@Autowired
-	DbCleaner dbCleaner;
-
-	RestClient restClient;
-
-	@BeforeEach
-	void setUp() {
-		restClient = RestClient.builder()
-			.baseUrl("http://localhost:" + port)
-			.build();
-
-		dbCleaner.execute();
-	}
 
 	@Test
 	@DisplayName("포인트 조회에 성공하면 200 OK를 응답하고 userId와 잔액을 확인한다.")
