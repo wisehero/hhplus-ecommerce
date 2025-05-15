@@ -36,4 +36,10 @@ public class CouponController implements CouponControllerSpec {
 	public void issueCouponV2(@Valid @RequestBody CouponIssueRequest request) {
 		couponService.issueCouponV4(request.toIssueCommand());
 	}
+
+	@PostMapping("/issue/redis")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void issueCouponV4(@Valid @RequestBody CouponIssueRequest request) {
+		couponService.issueWithRedis(request.toIssueCommand());
+	}
 }
