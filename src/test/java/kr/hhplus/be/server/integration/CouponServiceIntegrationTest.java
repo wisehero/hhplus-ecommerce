@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.instancio.Instancio;
 import org.instancio.Select;
@@ -22,6 +26,8 @@ import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
 import kr.hhplus.be.server.domain.coupon.exception.CouponOutOfStockException;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
+import kr.hhplus.be.server.infra.coupon.PublishedCouponJpaRepository;
+import kr.hhplus.be.server.infra.coupon.redis.CouponRedisRepository;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 
 public class CouponServiceIntegrationTest extends IntgerationTestSupport {
@@ -31,6 +37,9 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 
 	@Autowired
 	private CouponRepository couponRepository;
+
+	@Autowired
+	private PublishedCouponJpaRepository publishedCouponJpaRepository;
 
 	@Test
 	@DisplayName("발급된 쿠폰 ID로 조회하면 해당 쿠폰이 반환된다.")
@@ -193,5 +202,67 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 		PublishedCoupon updated = couponRepository.findPublishedCouponById(publishedCoupon.getId());
 
 		assertThat(updated.isUsed()).isFalse();
+	}
+
+	@Test
+	@DisplayName("100개 쿠폰에 대해 200명의 사용자가 동시에 요청하면 정확히 100명만 발급받아야 한다")
+	void shouldHandleConcurrentRequestsForLimitedCoupon() throws InterruptedException {
+		// given
+		Coupon coupon = Instancio.of(Coupon.class)
+			.ignore(Select.field(Coupon.class, "id"))
+			.set(Select.field(Coupon.class, "couponName"), "선착순 쿠폰")
+			.set(Select.field(Coupon.class, "discountValue"), BigDecimal.valueOf(1000))
+			.set(Select.field(Coupon.class, "discountType"), DiscountType.FIXED)
+			.set(Select.field(Coupon.class, "issuePolicyType"), CouponIssuePolicyType.LIMITED)
+			.set(Select.field(Coupon.class, "remainingCount"), 100L) // 100개 제한 쿠폰
+			.set(Select.field(Coupon.class, "validFrom"), LocalDate.now().minusDays(1))
+			.set(Select.field(Coupon.class, "validTo"), LocalDate.now().plusDays(5))
+			.create();
+
+		Coupon savedCoupon = couponRepository.save(coupon);
+		Long couponId = savedCoupon.getId();
+
+		int threadCount = 200; // 200명의 사용자
+		ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+		CountDownLatch latch = new CountDownLatch(threadCount);
+		AtomicInteger successCount = new AtomicInteger(0);
+		AtomicInteger failCount = new AtomicInteger(0);
+
+		// when
+		for (int i = 0; i < threadCount; i++) {
+			final long userId = i + 1;
+			executorService.submit(() -> {
+				try {
+					couponService.issueWithRedis(new CouponIssueCommand(userId, couponId));
+					successCount.incrementAndGet();
+				} catch (CouponAlreadyIssuedException e) {
+					failCount.incrementAndGet(); // 중복 발급자가 없다.
+				} catch (Exception e) {
+					// 무시
+				} finally {
+					latch.countDown();
+				}
+			});
+		}
+
+		// 모든 요청 완료 대기
+		latch.await();
+		executorService.shutdown();
+
+		// 스케줄러 실행 대기 (쿠폰 발급 처리 시간)
+		Thread.sleep(5000);
+
+		// then
+		// 1. 큐에 추가 성공한 수는 200명이어야 함 (실패 케이스 없음)
+		assertThat(successCount.get()).isEqualTo(threadCount);
+		assertThat(failCount.get()).isEqualTo(0);
+
+		// 2. 실제 발급된 쿠폰 수는 100개여야 함 (재고 한도)
+		int actualIssuedCount = publishedCouponJpaRepository.findAll().size();
+		assertThat(actualIssuedCount).isEqualTo(100);
+
+		// 3. 업데이트된 쿠폰의 재고는 0이어야 함
+		Coupon updatedCoupon = couponRepository.findById(couponId);
+		assertThat(updatedCoupon.getRemainingCount()).isEqualTo(0);
 	}
 }
