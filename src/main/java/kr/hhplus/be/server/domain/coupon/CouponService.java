@@ -90,6 +90,12 @@ public class CouponService {
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
 
+	public void issueWithRedis(CouponIssueCommand command) {
+		if (!couponRepository.addIfAbsent(command.couponId(), command.userId())) {
+			throw new CouponAlreadyIssuedException();
+		}
+	}
+
 	@Transactional
 	public void restorePublishedCoupon(Long publishedCouponId) {
 		if (publishedCouponId == null) {
