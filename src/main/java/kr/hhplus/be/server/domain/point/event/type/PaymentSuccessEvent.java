@@ -1,18 +1,18 @@
 package kr.hhplus.be.server.domain.point.event.type;
 
-import org.springframework.context.ApplicationEvent;
+import java.io.Serializable;
 
-import kr.hhplus.be.server.domain.order.Order;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 
-public class PaymentSuccessEvent{
+public class PaymentSuccessEvent implements Serializable {
 
-	private final Order order;
+	private final OrderInfo orderInfo;
 
-	public PaymentSuccessEvent( Order order) {
-		this.order = order;
+	public PaymentSuccessEvent(OrderInfo orderInfo) {
+		this.orderInfo = orderInfo;
 	}
 
-	public Order getOrder() {
-		return order;
+	public OrderInfo getOrderInfo() {
+		return orderInfo;
 	}
 }

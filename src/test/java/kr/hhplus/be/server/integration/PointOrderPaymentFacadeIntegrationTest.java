@@ -23,6 +23,7 @@ import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderRepository;
 import kr.hhplus.be.server.domain.order.OrderStatus;
 import kr.hhplus.be.server.domain.order.client.DataPlatformClient;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 import kr.hhplus.be.server.domain.point.Balance;
 import kr.hhplus.be.server.domain.point.Point;
 import kr.hhplus.be.server.domain.point.PointRepository;
@@ -104,7 +105,7 @@ public class PointOrderPaymentFacadeIntegrationTest extends IntgerationTestSuppo
 			});
 
 		await().atMost(5, TimeUnit.SECONDS)
-			.untilAsserted(() -> verify(dataPlatformClient).send(any(Order.class)));
+			.untilAsserted(() -> verify(dataPlatformClient).send(any(OrderInfo.class)));
 
 	}
 }

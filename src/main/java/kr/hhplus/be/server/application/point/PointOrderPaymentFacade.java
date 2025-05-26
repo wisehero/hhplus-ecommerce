@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import kr.hhplus.be.server.application.point.dto.PointOrderPaymentCommand;
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderService;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 import kr.hhplus.be.server.domain.point.PointService;
 import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
 import kr.hhplus.be.server.domain.point.event.type.PaymentSuccessEvent;
@@ -37,6 +38,6 @@ public class PointOrderPaymentFacade {
 		// 주문 상태 PENDING -> PAID
 		orderService.completeOrder(order);
 
-		eventPublisher.publish(new PaymentSuccessEvent( order));
+		eventPublisher.publish(new PaymentSuccessEvent(new OrderInfo(order)));
 	}
 }

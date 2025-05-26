@@ -19,7 +19,7 @@ public class OrderPaymentEventHandler {
 	@Async
 	public void handleOrderPaymentEvent(PaymentSuccessEvent event) {
 		// 주문 결제 완료 후 데이터 플랫폼에 전송
-		dataPlatformClient.send(event.getOrder());
+		dataPlatformClient.send(event.getOrderInfo());
 	}
 
 }
