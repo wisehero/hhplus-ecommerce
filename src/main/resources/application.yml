@@ -34,6 +34,28 @@ spring:
       host: localhost
       port: 6379
 
+  kafka:
+    bootstrap-servers: localhost:9094  # 외부 포트 사용
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      properties:
+        linger.ms: 1
+      buffer-memory: 33554432
+    consumer:
+      group-id: ${spring.application.name}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      enable-auto-commit: false
+      auto-commit-interval: 1000
+    admin:
+      properties:
+        bootstrap.servers: localhost:9092
+
 springdoc:
   packages-to-scan: kr.hhplus.be.server.interfaces.api
   default-consumes-media-type: application/json;charset=UTF-8
