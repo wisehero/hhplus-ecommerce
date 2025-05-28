@@ -32,6 +32,8 @@ import kr.hhplus.be.server.domain.product.Product;
 import kr.hhplus.be.server.domain.product.ProductRepository;
 import kr.hhplus.be.server.domain.user.User;
 import kr.hhplus.be.server.domain.user.UserRepository;
+import kr.hhplus.be.server.infra.order.messaging.OrderKafkaProducer;
+import kr.hhplus.be.server.interfaces.consumer.OrderKafkaConsumer;
 import kr.hhplus.be.server.interfaces.event.order.OrderPaymentEventHandler;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 
@@ -61,6 +63,14 @@ public class PointOrderPaymentFacadeIntegrationTest extends IntgerationTestSuppo
 
 	@MockitoSpyBean
 	private OrderPaymentEventHandler orderPaymentEventHandler;
+
+	// 카프카 프로듀서 스파이
+	@MockitoSpyBean
+	private OrderKafkaProducer orderKafkaProducer; // 또는 실제 프로듀서 클래스명
+
+	// 카프카 컨슈머 스파이
+	@MockitoSpyBean
+	private OrderKafkaConsumer orderKafkaConsumer;
 
 	@Test
 	@DisplayName("유저 포인트로 결제 시 주문 상태가 PAID로 변경되고 포인트가 차감되며 외부 시스템 전송이 발생한다.")
@@ -96,16 +106,28 @@ public class PointOrderPaymentFacadeIntegrationTest extends IntgerationTestSuppo
 			() -> assertThat(updatedOrder.getOrderStatus()).isEqualTo(OrderStatus.PAID),
 			() -> assertThat(userPoint.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(40_000)));
 
-		// 이벤트 발행 검증
-		assertThat(applicationEvents.stream(PaymentSuccessEvent.class).count()).isEqualTo(1);
-
+		// 이벤트 핸들러 호출 검증
 		await().atMost(5, TimeUnit.SECONDS)
 			.untilAsserted(() -> {
 				verify(orderPaymentEventHandler).handleOrderPaymentEvent(any(PaymentSuccessEvent.class));
 			});
 
+		// 카프카 프로듀서 호출 검증 (메시지 전송)
 		await().atMost(5, TimeUnit.SECONDS)
-			.untilAsserted(() -> verify(dataPlatformClient).send(any(OrderInfo.class)));
+			.untilAsserted(() -> {
+				verify(orderKafkaProducer).send(any(OrderInfo.class));
+			});
 
+		// 카프카 컨슈머 호출 검증 (메시지 수신 및 처리)
+		await().atMost(10, TimeUnit.SECONDS)
+			.untilAsserted(() -> {
+				verify(orderKafkaConsumer).consume(any(OrderInfo.class), anyString(), anyInt(), anyLong());
+			});
+
+		// 최종적으로 DataPlatformClient 호출 검증
+		await().atMost(10, TimeUnit.SECONDS)
+			.untilAsserted(() -> {
+				verify(dataPlatformClient).send(any(OrderInfo.class));
+			});
 	}
 }
