@@ -19,4 +19,14 @@ public class KafkaTopicConfig {
 			.replicas(1)
 			.build();
 	}
+
+	@Bean
+	public NewTopic couponIssueTopic() {
+		String topicName = "coupon-issue";
+		log.info("쿠폰 발급 토픽 생성 설정: {}", topicName);
+		return TopicBuilder.name(topicName)
+			.partitions(1)  // 선착순 보장을 위해 단일 파티션
+			.replicas(1)
+			.build();
+	}
 }

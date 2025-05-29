@@ -42,4 +42,10 @@ public class CouponController implements CouponControllerSpec {
 	public void issueCouponV4(@Valid @RequestBody CouponIssueRequest request) {
 		couponService.issueWithRedis(request.toIssueCommand());
 	}
+
+	@PostMapping("/issue/kafka")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void issueCouponV5(@Valid @RequestBody CouponIssueRequest request){
+		couponService.issueRequest(request.toIssueCommand());
+	}
 }
