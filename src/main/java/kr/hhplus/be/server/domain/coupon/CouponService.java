@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
+import kr.hhplus.be.server.domain.coupon.event.CouponEventPublisher;
+import kr.hhplus.be.server.domain.coupon.event.type.CouponIssueRequestEvent;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
 import kr.hhplus.be.server.support.aop.lock.DistributedLock;
 import kr.hhplus.be.server.support.aop.lock.SpinLock;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CouponService {
 
 	private final CouponRepository couponRepository;
+	private final CouponEventPublisher couponEventPublisher;
 
 	public PublishedCoupon getPublishedCouponById(Long publishedCouponId) {
 		if (publishedCouponId == null) {
@@ -96,6 +99,11 @@ public class CouponService {
 		}
 	}
 
+	public void issueRequest(CouponIssueCommand command) {
+		log.info("쿠폰 발급 요청을 이벤트로 발행: {}", command);
+		couponEventPublisher.publish(new CouponIssueRequestEvent(command.userId(), command.couponId()));
+	}
+
 	@Transactional
 	public void restorePublishedCoupon(Long publishedCouponId) {
 		if (publishedCouponId == null) {
@@ -106,4 +114,5 @@ public class CouponService {
 		publishedCoupon.restore();
 		couponRepository.savePublishedCoupon(publishedCoupon);
 	}
+
 }
