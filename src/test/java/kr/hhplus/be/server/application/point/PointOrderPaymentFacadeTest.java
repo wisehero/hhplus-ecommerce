@@ -18,6 +18,7 @@ import kr.hhplus.be.server.application.point.dto.PointOrderPaymentCommand;
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.OrderService;
 import kr.hhplus.be.server.domain.order.client.DataPlatformClient;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 import kr.hhplus.be.server.domain.point.PointService;
 import kr.hhplus.be.server.domain.point.dto.PointUseCommand;
 
@@ -64,7 +65,7 @@ class PointOrderPaymentFacadeTest {
 			() -> verify(orderService).getOrderById(orderId),
 			() -> verify(pointService).useUserPoint(expectedPointUseCommand),
 			() -> verify(orderService).completeOrder(order),
-			() -> verify(dataPlatformClient).send(order)
+			() -> verify(dataPlatformClient).send(new OrderInfo(order))
 		);
 	}
 }

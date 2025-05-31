@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.infra.point.spring;
 
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 

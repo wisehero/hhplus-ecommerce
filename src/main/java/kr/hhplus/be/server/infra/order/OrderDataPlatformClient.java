@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import kr.hhplus.be.server.domain.order.Order;
 import kr.hhplus.be.server.domain.order.client.DataPlatformClient;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -21,10 +22,10 @@ public class OrderDataPlatformClient implements DataPlatformClient {
 		maxAttempts = 3,
 		backoff = @Backoff(delay = 1000L)
 	)
-	public boolean send(Order order) {
+	public boolean send(OrderInfo orderInfo) {
 		try {
 			Thread.sleep(1000L);
-			log.info("주문 전송됨. 주문 ID: {}, 총액: {}", order.getId(), order.getTotalPrice());
+			log.info("주문 전송됨. 주문 ID: {}, 총액: {}", orderInfo.orderId(), orderInfo.totalPrice());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

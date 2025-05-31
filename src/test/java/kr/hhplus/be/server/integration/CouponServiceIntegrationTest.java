@@ -1,21 +1,29 @@
 package kr.hhplus.be.server.integration;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.*;
+import static org.instancio.Select.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.instancio.Instancio;
 import org.instancio.Select;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import kr.hhplus.be.server.domain.coupon.Coupon;
 import kr.hhplus.be.server.domain.coupon.CouponRepository;
@@ -23,11 +31,15 @@ import kr.hhplus.be.server.domain.coupon.CouponService;
 import kr.hhplus.be.server.domain.coupon.PublishedCoupon;
 import kr.hhplus.be.server.domain.coupon.discountpolicy.DiscountType;
 import kr.hhplus.be.server.domain.coupon.dto.CouponIssueCommand;
+import kr.hhplus.be.server.domain.coupon.event.CouponEventPublisher;
+import kr.hhplus.be.server.domain.coupon.event.type.CouponIssueRequestEvent;
 import kr.hhplus.be.server.domain.coupon.exception.CouponAlreadyIssuedException;
 import kr.hhplus.be.server.domain.coupon.exception.CouponOutOfStockException;
 import kr.hhplus.be.server.domain.coupon.issuePolicy.CouponIssuePolicyType;
 import kr.hhplus.be.server.infra.coupon.PublishedCouponJpaRepository;
+import kr.hhplus.be.server.infra.coupon.kafka.CouponKafkaProducer;
 import kr.hhplus.be.server.infra.coupon.redis.CouponRedisRepository;
+import kr.hhplus.be.server.interfaces.consumer.CouponKafkaConsumer;
 import kr.hhplus.be.server.support.IntgerationTestSupport;
 
 public class CouponServiceIntegrationTest extends IntgerationTestSupport {
@@ -40,6 +52,12 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 
 	@Autowired
 	private PublishedCouponJpaRepository publishedCouponJpaRepository;
+
+	@MockitoSpyBean
+	private CouponEventPublisher couponKafkaProducer;
+
+	@MockitoSpyBean
+	private CouponKafkaConsumer couponKafkaConsumer;
 
 	@Test
 	@DisplayName("발급된 쿠폰 ID로 조회하면 해당 쿠폰이 반환된다.")
@@ -264,5 +282,44 @@ public class CouponServiceIntegrationTest extends IntgerationTestSupport {
 		// 3. 업데이트된 쿠폰의 재고는 0이어야 함
 		Coupon updatedCoupon = couponRepository.findById(couponId);
 		assertThat(updatedCoupon.getRemainingCount()).isEqualTo(0);
+	}
+
+	@Test
+	@DisplayName("쿠폰 발급 시도 요청이 발생하면 카프카로 메세지가 전달되고 쿠폰 원장의 개수가 차감되고 발급된 쿠폰이 생성된다.")
+	void couponIssueKafkaTest() {
+		// given
+		Coupon savedCoupon = couponRepository.save(
+			Instancio.of(Coupon.class)
+				.ignore(field(Coupon.class, "id"))
+				.set(field(Coupon.class, "issuePolicyType"), CouponIssuePolicyType.LIMITED)
+				.set(field(Coupon.class, "remainingCount"), 10L)
+				.create()
+		);
+
+		CouponIssueCommand command = new CouponIssueCommand(1L, savedCoupon.getId());
+
+		// when
+		couponService.issueRequest(command);
+
+		// then
+		await().atMost(10, TimeUnit.SECONDS)
+			.untilAsserted(() -> {
+				// 1. 카프카 프로듀서 호출 검증
+				verify(couponKafkaProducer).publish(any(CouponIssueRequestEvent.class));
+
+				// 2. 카프카 컨슈머 호출 검증
+				verify(couponKafkaConsumer).consume(any(CouponIssueRequestEvent.class),
+					anyString(), anyInt(), anyString());
+
+				// 쿠폰 재고 차감 검증
+				Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId());
+				assertThat(updatedCoupon.getRemainingCount()).isEqualTo(9L);
+
+				// 발급된 쿠폰 테이블 저장 검증
+				PublishedCoupon publishedCoupon = couponRepository.findPublishedCouponBy(1L, savedCoupon.getId());
+				assertNotNull(publishedCoupon);
+				assertThat(publishedCoupon.getUserId()).isEqualTo(1L);
+			});
+
 	}
 }

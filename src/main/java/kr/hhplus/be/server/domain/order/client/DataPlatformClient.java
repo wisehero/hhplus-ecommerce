@@ -1,8 +1,8 @@
 package kr.hhplus.be.server.domain.order.client;
 
-import kr.hhplus.be.server.domain.order.Order;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 
 public interface DataPlatformClient {
 
-	boolean send(Order order);
+	boolean send(OrderInfo order);
 }

@@ -42,6 +42,10 @@ dependencies {
     // Lombok
     implementation("org.projectlombok:lombok")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.kafka:spring-kafka")
+
+    testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("org.testcontainers:kafka")
     annotationProcessor("org.projectlombok:lombok")
 
     // QueryDSL
@@ -51,8 +55,8 @@ dependencies {
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
     // redis
-    implementation ("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation ("org.redisson:redisson-spring-boot-starter:3.45.1")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.redisson:redisson-spring-boot-starter:3.45.1")
 
 
     // DB

@@ -12,6 +12,7 @@ import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 
 import kr.hhplus.be.server.domain.order.Order;
+import kr.hhplus.be.server.domain.order.dto.OrderInfo;
 import kr.hhplus.be.server.domain.point.event.type.PaymentSuccessEvent;
 import kr.hhplus.be.server.domain.user.User;
 
@@ -30,7 +31,8 @@ class PointPaymentEventPublisherTest {
 	void shouldPublishEventThroughApplicationEventPublisher() {
 		// given
 		Order order = Order.create(User.create(1L));
-		PaymentSuccessEvent event = new PaymentSuccessEvent(order);
+		OrderInfo orderInfo = new OrderInfo(order);
+		PaymentSuccessEvent event = new PaymentSuccessEvent(orderInfo);
 
 		// when
 		eventPublisher.publish(event);
@@ -43,6 +45,6 @@ class PointPaymentEventPublisherTest {
 			.findFirst()
 			.orElseThrow();
 
-		assertThat(publishedEvent.getOrder()).isEqualTo(order);
+		assertThat(publishedEvent.getOrderInfo()).isEqualTo(orderInfo);
 	}
 }
