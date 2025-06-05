@@ -62,6 +62,9 @@ dependencies {
     // DB
     runtimeOnly("com.mysql:mysql-connector-j")
 
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    implementation ("io.micrometer:micrometer-registry-prometheus")
+
     // Test
     testImplementation("org.instancio:instancio-junit:5.4.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
