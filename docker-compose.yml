@@ -25,14 +25,6 @@ services:
       - mysql
       - redis
       - kafka
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'        # CPU 코어 수
-          memory: 4G         # 메모리 한계
-        reservations:
-          cpus: '2.0'        # 최소 보장 CPU
-          memory: 4G       # 최소 보장 메모리
   redis:
     image: redis:7.4.2
     container_name: redis
@@ -92,6 +84,8 @@ services:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -101,6 +95,7 @@ services:
       - prometheus-hhplus
 
 volumes:
+  grafana-data:
   kafka-data:
 
 networks:
