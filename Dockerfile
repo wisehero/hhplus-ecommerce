@@ -7,4 +7,5 @@ COPY build/libs/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 힙 메모리 설정 (최소 2GB, 최대 4GB)
+ENTRYPOINT ["java", "-Xms2g", "-Xmx4g", "-jar", "app.jar"]
