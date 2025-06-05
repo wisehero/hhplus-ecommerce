@@ -85,7 +85,7 @@ export default function () {
     // 스파이크 테스트 체크
     check(res, {
         '시스템_생존': (r) => [204, 409].includes(r.status),
-        '응답시간_허용범위': (r) => r.timings.duration < 20000, // 2초 이내
+        '응답시간_허용범위': (r) => r.timings.duration < 2000, // 2초 이내
         '연결_성공': (r) => r.status !== 0,
     });
 
